@@ -1,0 +1,129 @@
+/* ========================================= */
+/* Estilos Mejorados para Testimonios       */
+/* ========================================= */
+
+.testimonial-section {
+    width: 95%;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #f4f7fa;
+    border-radius: 8px;
+}
+a {
+    /* -webkit-text-stroke-width: 0.2px;
+    -webkit-text-stroke-color: white; */
+    font-weight: bold;
+    color: var(--blank-color);
+    text-decoration: none;
+}
+.testimonial-section h2 {
+    text-align: center;
+    color: var(--font-color, #333333);
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+.testimonial-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px; /* Un poco más de espacio */
+}
+
+.testimonial-card {
+    background-color: var(--background-color, #ffffff);
+    border-radius: 10px; /* Bordes más suaves */
+    padding: 30px;
+    flex-basis: 320px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    
+    /* Sombra más definida y suave */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    
+    /* Posición relativa para el icono de comillas */
+    position: relative;
+    
+    /* Transición para el efecto hover */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efecto de "flotar" al pasar el mouse */
+.testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.testimonial-card blockquote {
+    margin: 0;
+    font-size: 1rem;
+    color: #555;
+    font-style: italic;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    
+    /* Posición relativa para las comillas */
+    position: relative;
+    padding-top: 20px; /* Espacio para las comillas */
+    
+    /* Quitamos el borde izquierdo que teníamos antes */
+    border-left: none; 
+    padding-left: 0;
+}
+
+/* Icono de comillas grandes */
+.testimonial-card blockquote::before {
+    content: '“';
+    position: absolute;
+    top: -10px;
+    left: 0;
+    font-size: 4rem; /* Tamaño grande */
+    font-family: Georgia, serif; /* Fuente más elegante para comillas */
+    
+    /* Usamos tu color secundario con transparencia */
+    color: var(--secondary-color, #3d4295);
+    opacity: 0.2;
+    line-height: 1;
+}
+
+/* Contenedor del autor (ahora con Flexbox) */
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    /* Línea separadora */
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    margin-top: auto; /* Empuja el autor al fondo si la tarjeta es alta */
+}
+
+/* Círculo para el avatar */
+.author-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: var(--secondary-color, #3d4295);
+    opacity: 0.7; /* Un poco más suave */
+    flex-shrink: 0; /* Evita que el círculo se encoja */
+}
+
+/* Contenedor para el texto del autor */
+.author-info {
+    /* Este div solo agrupa el texto */
+}
+
+.testimonial-author .author-name {
+    margin: 0;
+    font-weight: bold;
+    color: var(--font-color, #333333);
+}
+
+.testimonial-author .author-role {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #777;
+}

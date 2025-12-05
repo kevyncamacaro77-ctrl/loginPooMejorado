@@ -1,0 +1,99 @@
+body.dark-mode {
+    --ternary-color: #1f2033;
+    --font-color: #ffffff;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode span,
+body.dark-mode li,
+body.dark-mode p {
+    color: var(--text-main);
+}
+
+body.dark-mode .productos figure,
+body.dark-mode .testimonial-card,
+body.dark-mode .pregunta-card,
+body.dark-mode .container-form__form {
+    background-color: var(--bg-container) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--input-border);
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+body.dark-mode .productos {
+    background-color: var(--bg-body);
+}
+
+body.dark-mode .productos figure figcaption,
+body.dark-mode .productos figure p,
+body.dark-mode .testimonial-card blockquote,
+body.dark-mode .author-name,
+body.dark-mode .author-role,
+body.dark-mode .pregunta-card h4,
+body.dark-mode .pregunta-card p,
+body.dark-mode .faq-title,
+body.dark-mode .container-form__title,
+body.dark-mode #productos h2 {
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .faq-title,
+body.dark-mode .container-form__title,
+body.dark-mode #testimonio-pepon,
+body.dark-mode #productos h2 {
+    color: var(--primary-color) !important;
+}
+
+body.dark-mode footer p,
+body.dark-mode footer span,
+body.dark-mode footer a,
+body.dark-mode .footer-content p {
+    color: #ffffff !important;
+}
+
+body.dark-mode .container-information {
+    background-color: #27283f !important;
+    box-shadow: none;
+    border: none;
+}
+
+body.dark-mode .page-title {
+    color: #ffffff !important;
+}
+
+body.dark-mode .mission-history,
+body.dark-mode .values {
+    background-color: #24253a !important;
+    border-left: 5px solid orange !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    color: #e0e0e0 !important;
+    margin-bottom: 20px;
+}
+
+body.dark-mode .mission h2,
+body.dark-mode .history h2,
+body.dark-mode .values h2 {
+    color: orange !important;
+    border-bottom-color: #555;
+}
+
+body.dark-mode .container-information p,
+body.dark-mode .mission p,
+body.dark-mode .history p {
+    color: #cccccc !important;
+}
+
+body.dark-mode .values ul li {
+    background-color: #1f2033 !important;
+    border: 1px solid #444;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+body.dark-mode .values li strong {
+    color: orange;
+}

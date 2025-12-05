@@ -1,0 +1,354 @@
+/* =========================================
+   LAYOUT DEL PANEL DE USUARIO (DASHBOARD)
+   ========================================= */
+
+/* Contenedor Principal (Flexbox para Sidebar + Contenido) */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* =========================================
+   SIDEBAR (BARRA LATERAL)
+   ========================================= */
+.sidebar {
+    /* USO DE TU VARIABLE CSS (con un fallback oscuro por si acaso) */
+    background-color: var(--secondary-color, #2c3e50); 
+    
+    color: #ecf0f1;
+    width: 260px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Evita que se encoja */
+    transition: all 0.3s ease;
+    
+    /* Sombra suave para separar del contenido */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    /* Borde sutil ligeramente más claro/oscuro que el fondo */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar h3 {
+    margin: 0;
+    color: #fff; /* O un color de acento como #f39c12 */
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Botón Hamburguesa (Solo visible en móvil) */
+.menu-toggle {
+    display: none; 
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Navegación */
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar nav ul li {
+    margin-bottom: 8px;
+}
+
+.sidebar nav ul li a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 1rem;
+    display: block;
+    padding: 12px 15px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Hover y Estado Activo */
+.sidebar nav ul li a:hover, 
+.sidebar nav ul li a.active {
+    background-color: rgba(255, 255, 255, 0.15); /* Blanco translúcido */
+    color: white;
+    font-weight: 600;
+    transform: translateX(5px); /* Pequeño efecto de movimiento */
+}
+
+/* Botón de Cerrar Sesión (al fondo) */
+.sidebar .logout-form {
+    margin-top: auto; 
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+    width: 100%;
+    background: #e74c3c;
+    border: none;
+    padding: 12px;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.logout-btn:hover {
+    background: #c0392b;
+}
+
+/* =========================================
+   CONTENIDO PRINCIPAL
+   ========================================= */
+.main-content {
+    flex: 1; /* Ocupa el espacio restante */
+    padding: 40px;
+    overflow-y: auto; /* Scroll si el contenido es muy alto */
+}
+
+/* Secciones (Pestañas) */
+.tab-section {
+    display: none; /* Ocultas por defecto */
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.tab-section.active {
+    display: block; /* Visible si tiene la clase active */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   COMPONENTES: TARJETA DE PERFIL Y FORMULARIOS
+   ========================================= */
+.profile-card {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra elegante */
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.15);
+}
+
+.form-control:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Botones de Acción */
+.btn-save, .btn-action {
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: bold;
+}
+
+.btn-save {
+    background-color: #27ae60;
+    color: white;
+    padding: 12px 30px;
+    font-size: 1rem;
+    display: block;
+    width: 100%;
+}
+.btn-save:hover { background-color: #219150; }
+
+.btn-primary { background: #3498db; color: white; padding: 6px 12px; }
+.btn-primary:hover { background: #2980b9; }
+
+.btn-danger { background: #e74c3c; color: white; padding: 6px 12px; }
+.btn-danger:hover { background: #c0392b; }
+
+.btn-success { background: #27ae60; color: white; padding: 10px 20px; font-size: 1rem; }
+.btn-success:hover { background: #219150; }
+
+/* =========================================
+   TABLAS DE DATOS (PEDIDOS Y CARRITO)
+   ========================================= */
+table.data-table, table.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden; /* Para que el borde redondeado funcione en headers */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+table.data-table th, table.orders-table th {
+    background-color: #f1f2f6;
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 15px;
+    text-align: left;
+}
+
+table.data-table td, table.orders-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+/* Badges de Estado */
+.badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+.badge-pendiente { background: #f1c40f; color: #fff; }
+.badge-completado { background: #27ae60; color: #fff; }
+.badge-cancelado { background: #e74c3c; color: #fff; }
+
+/* =========================================
+   ALERTAS
+   ========================================= */
+.alert {
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+.alert-error {
+    background: #fde8e8;
+    color: #c0392b;
+    border-left: 5px solid #c0392b;
+}
+.alert-success {
+    background: #eafaf1;
+    color: #27ae60;
+    border-left: 5px solid #27ae60;
+}
+
+/* =========================================
+   RESPONSIVE (MÓVIL Y TABLET)
+   ========================================= */
+@media (max-width: 900px) {
+    .dashboard-container {
+        flex-direction: column; /* Cambia a vertical */
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 15px 20px;
+        position: relative; /* Ya no es fixed/sticky en móvil */
+    }
+
+    .menu-toggle {
+        display: block; /* Mostrar botón hamburguesa */
+    }
+
+    /* Ocultar menú por defecto en móvil */
+    .sidebar nav, 
+    .sidebar .logout-form {
+        display: none;
+        margin-top: 15px;
+    }
+
+    /* Mostrar menú cuando está activo */
+    .sidebar.active nav, 
+    .sidebar.active .logout-form {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .main-content {
+        padding: 20px 15px;
+    }
+
+    .profile-card {
+        padding: 25px;
+    }
+
+    /* Tablas con scroll horizontal para evitar rompimiento */
+    table.data-table, table.orders-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* En src/styles/css/userdatastyles.css */
+
+/* Contenedor flexible para los botones */
+.action-buttons-wrapper {
+    display: flex;
+    gap: 8px; /* Espacio entre botones */
+    justify-content: center; /* Centrados horizontalmente */
+    align-items: center;
+}
+
+/* Estilo unificado para botones de acción (iconos) */
+.btn-action {
+    width: 35px;
+    height: 35px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn-success {
+    background-color: #27ae60;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-action:hover {
+    transform: scale(1.1); /* Efecto zoom al pasar el mouse */
+    opacity: 0.9;
+}

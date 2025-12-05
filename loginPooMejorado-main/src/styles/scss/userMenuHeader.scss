@@ -1,0 +1,220 @@
+@import "globalVariables";
+
+header {
+  z-index: 1000;
+  display: flex;
+  position: sticky;
+  top: 0;
+  background-color: var(--ternary-color);
+  img {
+    object-fit: cover;
+  }
+  nav {
+    ul {
+      li {
+        // -webkit-text-stroke-width: 0.2px;
+        // -webkit-text-stroke-color: white;
+        color: var(--blank-color);
+        cursor: pointer;
+        transition-duration: 0.5s;
+        font-weight: bold;
+        font-size: 1rem;
+      }
+    }
+  }
+  .desktop-menu {
+    display: flex;
+    ul {
+      display: flex;
+      list-style: none;
+      text-align: start;
+      li {
+        display: flex;
+        &:hover {
+          background-color: var(--secondary-color);
+        }
+      }
+    }
+  }
+}
+
+@media (width < 680px) {
+  header {
+    position: fixed;
+    top: auto;
+    // top: 92%;
+    bottom: 2%;
+    left: 2%;
+    height: 3em;
+    width: 3em;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+    img {
+      display: none;
+    }
+    .desktop-menu {
+      display: none;
+    }
+    #mobile-menu {
+      transition-duration: 0.3s;
+      height: 100vh;
+      width: 100vw;
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 100%;
+      transition-duration: 0.3s;
+      transition: right 0.3s ease-in-out;
+      background-color: var(--ternary-color);
+      ul {
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: end;
+        padding: {
+          left: 1.2em;
+          bottom: 5.5em;
+        }
+        list-style: none;
+        gap: 10px;
+        li {
+          font-size: 1.5rem;
+          &:hover {
+            background-color: var(--secondary-color);
+            border-radius: 1px;
+          }
+        }
+      }
+      z-index: 999;
+    }
+    #mobile-menu-btn {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      top: 100%;
+      border-radius: 50%;
+      background-color: var(--secondary-color);
+      border: 1px solid var(--primary-color);
+      color: white;
+      z-index: 1000;
+      opacity: 0.7;
+    }
+  }
+}
+@media (width >= 680px) {
+  header {
+    /* Asegúrate de quitar justify-content: space-between; de aquí si existe en tu versión de 680px */
+    width: 100%;
+
+    /* Añade el estilo para el nuevo wrapper en estas vistas */
+    #desktop-navbar {
+      display: flex;
+      align-items: center; /* Alineación vertical */
+      justify-content: space-between;
+      width: 100%;
+
+      /* Define el ANCHO MÁXIMO del contenido y céntralo */
+      max-width: 1200px; /* VALOR RECOMENDADO: Puedes ajustarlo (ej. 1000px, 1400px) */
+      margin: 0 auto; /* Centra el contenedor interno */
+
+      /* Mueve el padding aquí para que solo se aplique dentro del max-width */
+      padding: 0.25rem 0.5rem;
+    }
+
+    /* Quita los padding de header si los moviste al wrapper */
+    padding: 0;
+  }
+}
+@media (680px <= width < 800px) {
+  header {
+    box-shadow: 0px 8px 6px -6px #333;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    justify-content: space-between;
+    padding: {
+      right: 0.25rem;
+      left: 0.25rem;
+    }
+    #mobile-menu {
+      display: none;
+    }
+    #mobile-menu-btn {
+      display: none;
+      opacity: 0.7;
+    }
+    #desktop-navbar {
+      .desktop-menu {
+        ul {
+          align-items: center;
+          flex-flow: row nowrap;
+          gap: 3px;
+          li {
+            align-items: center;
+            height: 100%;
+            padding: 0.1rem 0.25rem;
+            border: 1px solid transparent;
+            border-radius: 5px 5px 0 0;
+            font-size: 0.55em;
+          }
+        }
+      }
+    }
+  }
+}
+@media (width >= 800px) {
+  header {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    justify-content: space-between;
+    padding: {
+      right: 0.5rem;
+      left: 0.5rem;
+    }
+    #mobile-menu {
+      display: none;
+    }
+    #mobile-menu-btn {
+      display: none;
+    }
+    #desktop-navbar {
+      .desktop-menu {
+        ul {
+          align-items: center;
+          flex-flow: row nowrap;
+          gap: 5px;
+          li {
+            font-size: 0.72rem;
+            align-items: center;
+            height: 100%;
+            padding: 0.2rem 0.25rem;
+            border: 1px solid transparent;
+            border-radius: 5px 5px 5px 5px;
+          }
+        }
+      }
+    }
+  }
+}
+@media (width >= 890px) {
+  header {
+    box-shadow: 0px 8px 6px -6px #333;
+    #desktop-navbar {
+      .desktop-menu {
+        ul {
+          li {
+            font-size: 0.9rem;
+            height: 100%;
+            padding: 0.1rem 0.2rem;
+          }
+        }
+      }
+    }
+  }
+}

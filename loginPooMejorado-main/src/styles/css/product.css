@@ -1,0 +1,143 @@
+/* ========================================= */
+/* ESTILOS DE LA SECCIÓN PRODUCTOS (GRID)    */
+/* ========================================= */
+
+.productos {
+    min-height: 100vh;
+    display: grid;
+    /* Define 3 columnas del mismo ancho */
+    grid-template-columns: repeat(3, 1fr);
+    
+    /* Espaciado: 30px vertical, 20px horizontal */
+    gap: 10px 5px; 
+    
+    justify-items: center; 
+    justify-content: center;
+    align-items: start;
+    padding: 0;
+    
+    /* Fondo limpio (se adapta si hay modo oscuro por las variables globales) */
+    background-color: transparent; 
+}
+
+/* --- TARJETAS DE PRODUCTO --- */
+/* Abarca la etiqueta <figure> que usas en el PHP */
+.productos figure {
+    background-color: var(--bg-container, #ffffff); /* Usa variable o blanco por defecto */
+    border: 1px solid var(--input-border, #ddd);
+    border-radius: 8px;
+    
+    /* TAMAÑO FIJO DE LA TARJETA */
+    width: 300px; 
+    height: 420px; /* Altura fija para uniformidad */
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    margin: 0;
+    
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+/* Efecto Hover en la tarjeta */
+.productos figure:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* --- IMÁGENES --- */
+.productos figure img {
+    /* TAMAÑO CONTROLADO DE LA IMAGEN */
+    width: 100%;       /* Ocupa el ancho disponible de la tarjeta */
+    height: 180px;     /* Altura fija para que todas se vean iguales */
+    object-fit: contain; /* 'contain' muestra toda la foto, 'cover' la recorta */
+    
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+/* --- TEXTOS --- */
+.productos figure figcaption {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: var(--text-main, #333);
+    text-align: center;
+}
+
+.productos figure p {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #666);
+    margin: 5px 0;
+    text-align: center;
+    
+    /* Limitar texto largo */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* --- BOTONES Y ESTADO --- */
+.productos .btn {
+    display: inline-block;
+    padding: 8px 20px;
+    background-color: var(--secondary-color, #007bff);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: auto; /* Empuja el botón hacia abajo */
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.productos .btn:hover {
+    background-color: var(--ternary-color, #0056b3);
+}
+
+.productos .status {
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.productos .status.available { color: #28a745; }
+.productos .status.sold-out { color: #dc3545; }
+
+/* Título de la sección */
+.productos-title {
+    grid-column: 1 / -1; /* Ocupa todo el ancho */
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: var(--primary-color, orange);
+}
+
+/* --- RESPONSIVE (Móvil y Tablets) --- */
+
+/* Tablet (2 columnas) */
+@media (max-width: 900px) {
+    .productos {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Móvil (1 columna) */
+@media (max-width: 600px) {
+    .productos {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+    
+    .productos figure {
+        width: 100%; /* En móvil ocupa todo el ancho */
+        max-width: 350px;
+        height: auto; /* Altura flexible */
+    }
+}
