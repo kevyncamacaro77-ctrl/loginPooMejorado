@@ -24,6 +24,49 @@ $user_logged_in = isset($_SESSION['user_id']);
 $id_usuario = $_SESSION['user_id'] ?? null;
 $user_rol = $_SESSION['user_rol'] ?? 'cliente';
 
+
+// 4.5. LÓGICA DE REPORTE ESTADÍSTICO (INICIO DE LA INSERCIÓN)
+
+// Inicialización de la estructura de datos
+$stats = [
+    'media' => 0,
+    'mediana' => 0,
+    'moda' => 0,
+    'labels' => [], 
+    'data' => []    
+];
+
+// Requerimos los modelos y helpers (Asegúrate de que estas rutas sean correctas)
+require_once '../php/models/OrderModel.php';
+require_once '../php/helpers/StatsHelper.php';
+
+$orderModel = new OrderModel($connection);
+
+if ($user_rol === 'administrador') {
+    // 1. Obtener datos
+    $salesData = $orderModel->getConfirmedSalesData();
+
+    if (is_array($salesData) && !empty($salesData)) {
+        
+        // 2. Extraer y preparar datos
+        $quantities = array_column($salesData, 'total_vendido');
+        $quantities = array_map('intval', $quantities);
+
+        // 3. Calcular medidas
+        $stats['media'] = StatsHelper::calculateMean($quantities);
+        $stats['mediana'] = StatsHelper::calculateMedian($quantities);
+        $stats['moda'] = StatsHelper::calculateMode($quantities);
+        
+        // 4. Preparar para el gráfico
+        $stats['labels'] = array_column($salesData, 'nombre');
+        $stats['data'] = $quantities;
+    }
+}
+
+// Fin de la incersión de estadística
+
+
+
 // 5. MANEJO DE MENSAJES DE SESIÓN (Errores/Éxitos)
 $update_error_message = $_SESSION['update_error'] ?? null;
 $cart_success_message = $_SESSION['cart_success'] ?? null;
@@ -195,6 +238,138 @@ $csrf_token = SecurityHelper::getCsrfToken();
       </div>
     <?php endif; ?>
 
+      <?php if ($user_rol === 'administrador'): ?>
+        
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <div class="reporte-pasantias card p-4 mb-4" style="padding: 20px; border: 1px solid #333; margin: 20px auto; max-width: 90%; background-color: #2a2a3e; border-radius: 8px;">
+            
+            <h2 style="color: #61dafb; text-align: center;">📊 Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
+            <hr style="border-color: #444;">
+            
+            <div class="stats-section mb-4">
+                <h4 style="color: #61dafb;">1. Variable de Estudio y Muestra (Requisito A)</h4>
+                <p style="color: #bbb;">
+                    <strong>Variable de Estudio:</strong> **Cantidad Total Vendida por Producto** (Variable Cuantitativa Discreta).
+                </p>
+                <p style="color: #bbb;">
+                    <strong>Muestra Utilizada:</strong> Todos los productos únicos con ventas confirmadas.
+                </p>
+                <p class="text-muted" style="color: #777;"><small>Productos Únicos en Muestra: <?= count($stats['labels']) ?>.</small></p>
+            </div>
+
+            <div class="stats-section mb-4">
+                <h4 style="color: #61dafb;">2. Medidas de Tendencia Central (Requisitos B y C)</h4>
+                <table style="width: 100%; max-width: 600px; color: #ddd; border-collapse: collapse; margin-top: 15px;">
+                    <thead style="background-color: #3a3a50;">
+                        <tr>
+                            <th style="padding: 10px; border: 1px solid #444;">Medida</th>
+                            <th style="padding: 10px; border: 1px solid #444;">Valor Calculado (Unidades)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #444;">**Media (Promedio)**</td>
+                            <td style="padding: 8px; border: 1px solid #444;"><?= number_format($stats['media'], 2) ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #444;">**Mediana (Valor Central)**</td>
+                            <td style="padding: 8px; border: 1px solid #444;"><?= number_format($stats['mediana'], 2) ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #444;">**Moda (Valor Más Frecuente)**</td>
+                            <td style="padding: 8px; border: 1px solid #444;">
+                                <?php 
+                                    if (is_array($stats['moda'])) {
+                                        echo 'Multimodal: ' . implode(', ', $stats['moda']) . " unidades";
+                                    } else {
+                                        echo $stats['moda'] . " unidades";
+                                    }
+                                ?>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="stats-section">
+                <h4 style="color: #61dafb;">3. Representación Gráfica (Requisito D)</h4>
+                <div style="width: 100%; height: 400px; margin-top: 20px; background-color: #fff; padding: 10px; border-radius: 8px;">
+                    <canvas id="ventasChart"></canvas>
+                </div>
+                
+
+[Image of a vertical bar chart showing product sales]
+
+                <p class="text-center mt-3 text-muted" style="color: #777; text-align: center;"><small>
+                    Gráfico de Barras Vertical (Columnas) mostrando el volumen de ventas por producto.
+                </small></p>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('ventasChart');
+                
+                // Datos PHP serializados a JSON para JS
+                const chartLabels = <?= json_encode($stats['labels']) ?>;
+                const chartData = <?= json_encode($stats['data']) ?>;
+                
+                // Generar colores dinámicos
+                const backgroundColors = chartData.map((data, index) => 
+                    index < 3 ? 'rgba(255, 99, 132, 0.7)' : 'rgba(54, 162, 235, 0.7)'
+                );
+
+                if (ctx && chartData.length > 0) {
+                    new Chart(ctx, {
+                        type: 'bar', // Tipo de gráfico de barras
+                        data: {
+                            labels: chartLabels, // Nombres de los productos (Eje X)
+                            datasets: [{
+                                label: 'Unidades Vendidas',
+                                data: chartData, // Cantidades vendidas (Eje Y)
+                                backgroundColor: backgroundColors,
+                                borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Total de Unidades Vendidas por Producto',
+                                    font: { size: 16, weight: 'bold' }
+                                },
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Cantidad Vendida (Eje Y)',
+                                        font: { weight: 'bold' }
+                                    },
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Producto (Eje X)',
+                                        font: { weight: 'bold' }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
+    <?php endif; ?>
 
     <section id="productos" class="productos">
       <h2 class="productos-title">Nuestros Productos</h2>

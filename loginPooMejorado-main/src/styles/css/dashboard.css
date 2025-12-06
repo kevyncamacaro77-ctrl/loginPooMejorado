@@ -1,0 +1,55 @@
+.shein-img-wrapper img{
+  width: 70px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+.shein-info .small-muted, .small-muted{
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.price-highlight{
+  color: #fa6338;
+  font-weight: bold;
+}
+
+.admin-actions{
+  margin-top: 5px;
+  display: flex;
+  gap: 8px;
+}
+
+.small-input{
+  width: 60px;
+}
+
+.small-input.center{
+  text-align: center;
+}
+
+.small-label{
+  font-size: 0.8rem;
+  font-weight: 700; /* negrita */
+  color: #ffffff;   /* texto blanco */
+  display: inline-block;
+  border-bottom: none; /* quitar subrayado */
+  padding-bottom: 0;
+}
+
+.successMsg{
+  color: green;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid green;
+  margin: 10px;
+}
+
+/* Ensure errorMsg retains previous styling if defined elsewhere */
+.errorMsg{
+  /* base styles are in globalStyles.css; keep any additional layout here if needed */
+  margin: 10px;
+  text-align: center;
+}
