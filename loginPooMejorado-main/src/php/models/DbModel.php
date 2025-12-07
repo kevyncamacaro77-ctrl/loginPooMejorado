@@ -33,8 +33,6 @@ class DbModel
         return $result;
     }
 
-    // En src/php/models/DbModel.php
-
     protected function runDmlStatement(string $sql, string $types, ...$params): int|string
     {
     $stmt = $this->conn->prepare($sql);
@@ -47,30 +45,25 @@ class DbModel
         }
     }
 
-      if ($stmt->execute()) {
-        // *** ESTA ES LA CORRECCIÓN CLAVE ***
-        // 1. Verificar si fue una INSERCIÓN
-        if (str_starts_with(strtoupper(trim($sql)), 'INSERT')) {
-            // Devolver el ID generado por MySQL
-            $insertId = $this->conn->insert_id;
-            $stmt->close();
-            // Si $insertId es 0, algo salió mal, pero normalmente será el ID
-            return $insertId; 
+    if ($stmt->execute()) {
+        // CORRECCIÓN FINAL: Devolver el ID de inserción (Last Insert ID)
+        if ($stmt->insert_id > 0) {
+            // Es una inserción, devolvemos el nuevo ID
+            $result_id = $stmt->insert_id;
+        } else {
+            // Es un UPDATE o DELETE, devolvemos el número de filas afectadas
+            $result_id = $this->conn->affected_rows; 
         }
-
-        // 2. Si es UPDATE o DELETE, devolver las filas afectadas
-        $filas = $stmt->affected_rows; // Usamos $stmt->affected_rows para operaciones DML
+        
         $stmt->close();
-        return $filas; // Devolver INT
+        return $result_id; 
     }
 
-    // Manejo de errores si execute falla
     $err = $this->conn->error;
     $code = $this->conn->errno;
     $stmt->close();
 
     if ($code === 1062) return 1062;
     return "Error execute: " . $err;
-}
-
+    }
 }

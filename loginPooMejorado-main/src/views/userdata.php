@@ -295,7 +295,7 @@ unset($_SESSION['update_error'], $_SESSION['cart_success'], $_SESSION['cart_erro
                             <?php foreach ($orders as $order): ?>
                                 <tr>
                                     <td>#<?php echo $order['id']; ?></td>
-                                    <td><?php echo $order['fecha_solicitud']; ?></td>
+                                    <td><?php echo $order['fecha_pedido']; ?></td> <!-- ✅ Clave correcta -->
                                     <?php if ($user_rol === 'administrador'): ?>
                                         <td>
                                             <strong><?php echo htmlspecialchars($order['usuario'] ?? 'N/A'); ?></strong><br>

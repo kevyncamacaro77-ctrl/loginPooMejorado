@@ -24,49 +24,6 @@ $user_logged_in = isset($_SESSION['user_id']);
 $id_usuario = $_SESSION['user_id'] ?? null;
 $user_rol = $_SESSION['user_rol'] ?? 'cliente';
 
-
-// 4.5. LÓGICA DE REPORTE ESTADÍSTICO (INICIO DE LA INSERCIÓN)
-
-// Inicialización de la estructura de datos
-$stats = [
-    'media' => 0,
-    'mediana' => 0,
-    'moda' => 0,
-    'labels' => [], 
-    'data' => []    
-];
-
-// Requerimos los modelos y helpers (Asegúrate de que estas rutas sean correctas)
-require_once '../php/models/OrderModel.php';
-require_once '../php/helpers/StatsHelper.php';
-
-$orderModel = new OrderModel($connection);
-
-if ($user_rol === 'administrador') {
-    // 1. Obtener datos
-    $salesData = $orderModel->getConfirmedSalesData();
-
-    if (is_array($salesData) && !empty($salesData)) {
-        
-        // 2. Extraer y preparar datos
-        $quantities = array_column($salesData, 'total_vendido');
-        $quantities = array_map('intval', $quantities);
-
-        // 3. Calcular medidas
-        $stats['media'] = StatsHelper::calculateMean($quantities);
-        $stats['mediana'] = StatsHelper::calculateMedian($quantities);
-        $stats['moda'] = StatsHelper::calculateMode($quantities);
-        
-        // 4. Preparar para el gráfico
-        $stats['labels'] = array_column($salesData, 'nombre');
-        $stats['data'] = $quantities;
-    }
-}
-
-// Fin de la incersión de estadística
-
-
-
 // 5. MANEJO DE MENSAJES DE SESIÓN (Errores/Éxitos)
 $update_error_message = $_SESSION['update_error'] ?? null;
 $cart_success_message = $_SESSION['cart_success'] ?? null;
@@ -89,6 +46,40 @@ if ($user_logged_in && $user_rol !== 'administrador') {
 
 // 7. OBTENER TOKEN CSRF
 $csrf_token = SecurityHelper::getCsrfToken();
+
+// 8. LÓGICA DE ESTADÍSTICAS (¡ESTO FALTABA!)
+require_once '../php/helpers/StatsHelper.php'; // Agregamos la clase de cálculo
+
+// Inicializar $stats para que exista en el HTML/JS aunque esté vacío.
+$stats = [
+    'media' => 0.00,
+    'mediana' => 0.00,
+    'moda' => 0,
+    'labels' => [], // Nombres de productos para el gráfico
+    'data' => []    // Unidades vendidas para el gráfico
+];
+
+// 8.1 **SOLO** OBTENEMOS Y CALCULAMOS SI EL ROL ES ADMINISTRADOR
+if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
+    $salesData = $productModel->getSoldQuantities(); // <-- Usamos el modelo inicializado
+
+    if (!is_string($salesData) && !empty($salesData)) {
+        // Si tenemos datos, hacemos el cálculo
+        $stats['media'] = StatsHelper::calculateMean($salesData);
+        $stats['mediana'] = StatsHelper::calculateMedian($salesData);
+        $stats['moda'] = StatsHelper::calculateMode($salesData);
+
+        // Generar labels y data para el gráfico
+        foreach ($products as $p) {
+            if (($p['unidades_vendidas'] ?? 0) > 0) { 
+                $stats['labels'][] = htmlspecialchars($p['nombre']);
+                $stats['data'][] = (int) $p['unidades_vendidas'];
+            }
+        }
+    }
+}
+
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -104,13 +95,15 @@ $csrf_token = SecurityHelper::getCsrfToken();
   <link rel="stylesheet" id="sobrenosotros-style" href="../styles/css/section-sobrenosotros.css">
   <link rel="stylesheet" href="../styles/css/preguntas.css">
   <link rel="stylesheet" href="../styles/css/ContactForm.css">
+  <link rel="stylesheet" href="../styles/css/dashboard.css">
+  <link rel="stylesheet" href="../styles/css/pasantia.css">
   <title>Dashboard - Lubriken</title>
 </head>
 
 <body>
   <header id="navigation-bar">
     <section id="desktop-navbar">
-      <img src="../images/lubriken-log-o-type.png" alt="logotype" />
+      <img src="../images/lubriken-log-o-type.png" alt="logotype"  />
       <nav class="desktop-menu">
         <ul>
           <li><a href="#">Inicio</a></li>
@@ -129,32 +122,31 @@ $csrf_token = SecurityHelper::getCsrfToken();
               </a>
 
               <?php if (!empty($cart_items)): ?>
-                <div class="shein-dropdown">
+                <article class="shein-dropdown">
                   <ul class="shein-list">
                     <?php foreach ($cart_items as $item): ?>
                       <li class="shein-item">
-                        <div class="shein-img-wrapper">
-                          <img src="<?php echo htmlspecialchars($item['imagen_url']); ?>" alt="Producto"
-                            style="width: 70px; height: 90px; object-fit: cover; border-radius: 4px; display: block;">
-                        </div>
-                        <div class="shein-info">
+                        <article class="shein-img-wrapper">
+                          <img src="<?php echo htmlspecialchars($item['imagen_url']); ?>" alt="Producto" />
+                        </article>
+                        <article class="shein-info">
                           <span class="shein-name"><?php echo htmlspecialchars($item['nombre']); ?></span>
-                          <span style="font-size: 0.8rem; color: #888;">Cant: <?php echo $item['cantidad']; ?></span>
+                          <span class="small-muted">Cant: <?php echo $item['cantidad']; ?></span>
                           <span class="shein-price">$<?php echo number_format($item['precio'], 2); ?></span>
-                        </div>
+                        </article>
                       </li>
                     <?php endforeach; ?>
                   </ul>
-                  <div class="shein-footer">
-                    <div class="shein-total-row">
+                  <article class="shein-footer">
+                    <article class="shein-total-row">
                       <span>Total:</span>
-                      <span style="color: #fa6338;">
+                      <span class="price-highlight">
                         $<?php echo number_format(array_sum(array_column($cart_items, 'subtotal')), 2); ?>
                       </span>
-                    </div>
+                    </article>
                     <a href="userdata.php?tab=cart" class="shein-btn-checkout">VER BOLSA</a>
-                  </div>
-                </div>
+                  </article>
+                </article>
               <?php endif; ?>
             </li>
           <?php endif; ?>
@@ -209,167 +201,35 @@ $csrf_token = SecurityHelper::getCsrfToken();
     </nav>
 
     <button id="mobile-menu-btn">☰</button>
-  </header>
-
-  <main>
     <?php if ($user_logged_in): ?>
-      <form action="../php/controllers/UserController.php" method="POST" style="text-align: right; padding: 10px;">
+      <form action="../php/controllers/UserController.php" method="POST" class="logout-form header-logout">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
         <input type="hidden" name="action" value="logout">
         <button type="submit" class="logout-btn">Cerrar Sesión</button>
       </form>
     <?php endif; ?>
+  </header>
+
+  <main>
 
     <?php if ($update_error_message): ?>
-      <div class="errorMsg" style="color: red; padding: 10px; text-align:center; border: 1px solid red; margin: 10px;">
+      <article class="errorMsg">
         <?php echo htmlspecialchars($update_error_message); ?>
-      </div>
+      </article>
     <?php endif; ?>
 
     <?php if ($cart_success_message): ?>
-      <div class="successMsg" style="color: green; padding: 10px; text-align:center; border: 1px solid green; margin: 10px;">
+      <article class="successMsg">
         <?php echo htmlspecialchars($cart_success_message); ?>
-      </div>
+      </article>
     <?php endif; ?>
 
     <?php if ($cart_error_message): ?>
-      <div class="errorMsg" style="color: red; padding: 10px; text-align:center; border: 1px solid red; margin: 10px;">
+      <article class="errorMsg">
         <?php echo htmlspecialchars($cart_error_message); ?>
-      </div>
+      </article>
     <?php endif; ?>
 
-      <?php if ($user_rol === 'administrador'): ?>
-        
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-        <div class="reporte-pasantias card p-4 mb-4" style="padding: 20px; border: 1px solid #333; margin: 20px auto; max-width: 90%; background-color: #2a2a3e; border-radius: 8px;">
-            
-            <h2 style="color: #61dafb; text-align: center;">📊 Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
-            <hr style="border-color: #444;">
-            
-            <div class="stats-section mb-4">
-                <h4 style="color: #61dafb;">1. Variable de Estudio y Muestra (Requisito A)</h4>
-                <p style="color: #bbb;">
-                    <strong>Variable de Estudio:</strong> **Cantidad Total Vendida por Producto** (Variable Cuantitativa Discreta).
-                </p>
-                <p style="color: #bbb;">
-                    <strong>Muestra Utilizada:</strong> Todos los productos únicos con ventas confirmadas.
-                </p>
-                <p class="text-muted" style="color: #777;"><small>Productos Únicos en Muestra: <?= count($stats['labels']) ?>.</small></p>
-            </div>
-
-            <div class="stats-section mb-4">
-                <h4 style="color: #61dafb;">2. Medidas de Tendencia Central (Requisitos B y C)</h4>
-                <table style="width: 100%; max-width: 600px; color: #ddd; border-collapse: collapse; margin-top: 15px;">
-                    <thead style="background-color: #3a3a50;">
-                        <tr>
-                            <th style="padding: 10px; border: 1px solid #444;">Medida</th>
-                            <th style="padding: 10px; border: 1px solid #444;">Valor Calculado (Unidades)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #444;">**Media (Promedio)**</td>
-                            <td style="padding: 8px; border: 1px solid #444;"><?= number_format($stats['media'], 2) ?></td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #444;">**Mediana (Valor Central)**</td>
-                            <td style="padding: 8px; border: 1px solid #444;"><?= number_format($stats['mediana'], 2) ?></td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #444;">**Moda (Valor Más Frecuente)**</td>
-                            <td style="padding: 8px; border: 1px solid #444;">
-                                <?php 
-                                    if (is_array($stats['moda'])) {
-                                        echo 'Multimodal: ' . implode(', ', $stats['moda']) . " unidades";
-                                    } else {
-                                        echo $stats['moda'] . " unidades";
-                                    }
-                                ?>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="stats-section">
-                <h4 style="color: #61dafb;">3. Representación Gráfica (Requisito D)</h4>
-                <div style="width: 100%; height: 400px; margin-top: 20px; background-color: #fff; padding: 10px; border-radius: 8px;">
-                    <canvas id="ventasChart"></canvas>
-                </div>
-                
-
-[Image of a vertical bar chart showing product sales]
-
-                <p class="text-center mt-3 text-muted" style="color: #777; text-align: center;"><small>
-                    Gráfico de Barras Vertical (Columnas) mostrando el volumen de ventas por producto.
-                </small></p>
-            </div>
-        </div>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const ctx = document.getElementById('ventasChart');
-                
-                // Datos PHP serializados a JSON para JS
-                const chartLabels = <?= json_encode($stats['labels']) ?>;
-                const chartData = <?= json_encode($stats['data']) ?>;
-                
-                // Generar colores dinámicos
-                const backgroundColors = chartData.map((data, index) => 
-                    index < 3 ? 'rgba(255, 99, 132, 0.7)' : 'rgba(54, 162, 235, 0.7)'
-                );
-
-                if (ctx && chartData.length > 0) {
-                    new Chart(ctx, {
-                        type: 'bar', // Tipo de gráfico de barras
-                        data: {
-                            labels: chartLabels, // Nombres de los productos (Eje X)
-                            datasets: [{
-                                label: 'Unidades Vendidas',
-                                data: chartData, // Cantidades vendidas (Eje Y)
-                                backgroundColor: backgroundColors,
-                                borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Total de Unidades Vendidas por Producto',
-                                    font: { size: 16, weight: 'bold' }
-                                },
-                                legend: { display: false }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Cantidad Vendida (Eje Y)',
-                                        font: { weight: 'bold' }
-                                    },
-                                    ticks: {
-                                        precision: 0
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Producto (Eje X)',
-                                        font: { weight: 'bold' }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-        </script>
-    <?php endif; ?>
 
     <section id="productos" class="productos">
       <h2 class="productos-title">Nuestros Productos</h2>
@@ -393,8 +253,8 @@ $csrf_token = SecurityHelper::getCsrfToken();
             alt="<?php echo htmlspecialchars($product['nombre']); ?>" />
 
           <figcaption><?php echo htmlspecialchars($product['nombre']); ?></figcaption>
-          <p><?php echo htmlspecialchars($product['descripcion'] ?? 'Sin descripción.'); ?></p>
-          <p>Precio: <strong><?php echo htmlspecialchars($product['precio']); ?>$</strong></p>
+          <p class="product-desc <?php echo ($product['id'] == 18) ? 'product-desc--3lines' : ''; ?>"><?php echo htmlspecialchars($product['descripcion'] ?? 'Sin descripción.'); ?></p>
+          <p class="product-price">Precio: <strong><?php echo htmlspecialchars($product['precio']); ?>$</strong></p>
 
          <?php if ($user_rol === 'administrador'): ?>
 
@@ -402,14 +262,17 @@ $csrf_token = SecurityHelper::getCsrfToken();
               <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
               <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+              <input type="hidden" name="stock_comprometido" value="<?php echo $product['stock_comprometido']; ?>">
+              <!-- new_stock will be calculado en submit (stock_disponible + stock_comprometido) -->
+              <input type="hidden" name="new_stock" value="<?php echo $product['stock_actual']; ?>">
 
-              <label style="font-size: 0.8rem;">Stock Físico Total:</label>
-              <input type="number" name="new_stock" value="<?php echo $product['stock_actual']; ?>" min="0" style="width: 60px;">
+              <label class="small-label">Stock Disponible<?= ($product['stock_comprometido'] > 0 && $product['nombre'] !== 'Aceite para carro Inca') ? ' - ' . $product['stock_comprometido'] . ' reservada(s)' : '' ?>:</label>
+              <input type="number" name="new_stock_available" value="<?php echo ($product['stock_actual'] - $product['stock_comprometido']); ?>" min="0" class="small-input">
 
-              <div style="margin-top: 5px;">
+              <article class="admin-actions">
                 <button type="submit" name="action" value="update_stock" class="btn admin-btn">Actualizar</button>
                 <button type="submit" name="action" value="delete_product" class="btn admin-btn delete-btn" onclick="return confirm('¿Seguro que deseas eliminar este producto?');">Eliminar</button>
-              </div>
+              </article>
             </form>
 
           <?php else: ?>
@@ -422,7 +285,7 @@ $csrf_token = SecurityHelper::getCsrfToken();
 
               <?php if ($user_logged_in): ?>
                 <input type="number" name="quantity" value="1" min="1" max="<?php echo $stock; ?>"
-                  <?php echo ($stock <= 0) ? 'disabled' : ''; ?> style="width: 50px; text-align: center;">
+                  <?php echo ($stock <= 0) ? 'disabled' : ''; ?> class="small-input center">
 
                 <button type="submit" class="btn" <?php echo ($stock <= 0) ? 'disabled' : ''; ?>>
                   Reservar
@@ -502,7 +365,76 @@ $csrf_token = SecurityHelper::getCsrfToken();
       </section>
 
     </section>
-    <!--Preguntas frecuentes-->
+      <!-- Reporte de Pasantías: análisis y gráfico -->
+
+      <?php
+      // Aseguramos que $stats exista para evitar warnings si no fue calculado
+      $stats = $stats ?? ['labels' => [], 'data' => [], 'media' => 0, 'mediana' => 0, 'moda' => 0];
+      ?>
+
+      <?php if ($user_rol === 'administrador'): // <--- INICIO DE LA CONDICIÓN ?>
+
+      <article class="reporte-pasantias card p-4 mb-4">
+        <h2>📊 Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
+        <hr>
+
+        <article class="stats-section mb-4">
+          <h4>1. Variable de Estudio y Muestra (Requisito A)</h4>
+          <p>
+            <strong>Variable de Estudio:</strong> Cantidad Total Vendida por Producto (Variable Cuantitativa Discreta).
+          </p>
+          <p>
+            <strong>Muestra Utilizada:</strong> Todos los productos únicos con ventas confirmadas.
+          </p>
+          <p class="text-muted small-muted"><small>Productos Únicos en Muestra: <?php echo count($stats['labels']); ?>.</small></p>
+              </article>
+
+        <article class="stats-section mb-4">
+          <h4>2. Medidas de Tendencia Central (Requisitos B y C)</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Medida</th>
+                <th>Valor Calculado (Unidades)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Media (Promedio)</td>
+                <td><?php echo number_format($stats['media'], 2); ?></td>
+              </tr>
+              <tr>
+                <td>Mediana (Valor Central)</td>
+                <td><?php echo number_format($stats['mediana'], 2); ?></td>
+              </tr>
+              <tr>
+                <td>Moda (Valor Más Frecuente)</td>
+                <td>
+                  <?php
+                    if (is_array($stats['moda'])) {
+                      echo 'Multimodal: ' . implode(', ', $stats['moda']) . " unidades";
+                    } else {
+                      echo $stats['moda'] . " unidades";
+                    }
+                  ?>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="stats-section">
+          <h4>3. Representación Gráfica (Requisito D)</h4>
+          <article class="ventas-wrapper">
+            <canvas id="ventasChart"></canvas>
+            </article>
+          <p class="text-center small-muted" style="text-align:center; margin-top:8px;"><small>Gráfico de Barras Vertical (Columnas) mostrando el volumen de ventas por producto.</small></p>
+        </article>
+      </article>
+
+    <?php endif; // <--- FIN DE LA CONDICIÓN ?>
+      
+<!--Preguntas frecuentes-->
     <h3 class="faq-title">Preguntas Frecuentes</h3>
     <section id="preguntas" class="preguntas">
       <article class="pregunta-card">
@@ -517,7 +449,7 @@ $csrf_token = SecurityHelper::getCsrfToken();
 
       <article class="pregunta-card">
         <h4>¿Realizan envios a domicilio? C.A</h4>
-        <p>Por ahora no realizamos envio a domicilio.</p>
+        <p>Si, Realizamos Envio a Nivel Nacional.</p>
       </article>
 
       <article class="pregunta-card">
@@ -531,29 +463,29 @@ $csrf_token = SecurityHelper::getCsrfToken();
       <h2 class="container-form__title">Formulario de contacto</h2>
       <form class="container-form__form" action="" method="POST">
 
-        <div class="container-form__div">
+        <article class="container-form__div">
           <label for="nombre_contacto">Nombre</label>
           <input class="container-form__campo" type="text" id="nombre_contacto" placeholder="Nombre">
-        </div>
+        </article>
 
-        <div class="container-form__div">
+        <article class="container-form__div">
           <label for="numero_contacto">Numero</label>
           <input class="container-form__campo" type="number" id="numero_contacto" placeholder="Numero" min="1">
-        </div>
+        </article>
 
-        <div class="container-form__div">
+        <article class="container-form__div">
           <label for="correo_contacto">Correo</label>
           <input class="container-form__campo" type="email" id="correo_contacto" placeholder="Correo">
-        </div>
+        </article>
 
-        <div class="container-form__div">
+        <article class="container-form__div">
           <label for="mensaje_contacto">Mensaje</label>
           <textarea class="container-form__campo" name="mensaje_contacto" id="mensaje_contacto" placeholder="Deja un mensaje"></textarea>
-        </div>
+        </article>
 
-        <div class="container-form__div container-form__submit alinear-derecha">
+        <article class="container-form__div container-form__submit alinear-derecha">
           <button type="submit">Enviar</button>
-        </div>
+        </article>
       </form>
 
   </main>
@@ -566,6 +498,102 @@ $csrf_token = SecurityHelper::getCsrfToken();
   </footer>
   <script src="../js/header-component.js"></script>
   <script src="../js/theme.js"></script>
+  <script>
+    // Evita envíos dobles en formularios de administración sin eliminar
+    // el botón pulsado (para que su name/value se incluya en el POST).
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.admin-controls').forEach(function(form) {
+        form.addEventListener('click', function(e) {
+          const target = e.target;
+          if (!target) return;
+          // Si se hizo click en un botón submit
+          if (target.tagName === 'BUTTON' && target.type === 'submit') {
+            // Si ya se envió, bloquear el nuevo click
+            if (form.dataset.submitted === 'true') {
+              e.preventDefault();
+              return;
+            }
+            // Marcamos como enviado inmediatamente para evitar dobles clicks
+            form.dataset.submitted = 'true';
+            // Deshabilitamos otros botones para feedback, pero dejamos el pulsado
+            form.querySelectorAll('button[type="submit"]').forEach(function(btn) {
+              if (btn !== target) btn.disabled = true;
+            });
+          }
+        });
+
+        // Si por algún motivo la sumisión se cancela, limpiamos el flag
+        form.addEventListener('reset', function() {
+          form.dataset.submitted = 'false';
+          form.querySelectorAll('button[type="submit"]').forEach(function(btn) { btn.disabled = false; });
+        });
+        
+        // Interceptar submit para calcular new_stock real a enviar
+        form.addEventListener('submit', function(e) {
+          // Obtener inputs
+          const availInput = form.querySelector('input[name="new_stock_available"]');
+          const compInput = form.querySelector('input[name="stock_comprometido"]');
+          const hiddenNew = form.querySelector('input[name="new_stock"]');
+          if (availInput && compInput && hiddenNew) {
+            const avail = parseInt(availInput.value || '0', 10);
+            const comp = parseInt(compInput.value || '0', 10);
+            // Calculamos el stock físico total que queremos establecer
+            const computed = avail + comp;
+            hiddenNew.value = computed;
+          }
+        });
+      });
+    });
+  </script>
+  <!-- Chart.js CDN and ventasChart initialization -->
+
+  <?php if ($user_rol === 'administrador'):?>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('ventasChart');
+      const chartLabels = <?php echo json_encode($stats['labels']); ?>;
+      const chartData = <?php echo json_encode($stats['data']); ?>;
+
+      const backgroundColors = chartData.map((data, index) =>
+        index < 3 ? 'rgba(255, 99, 132, 0.7)' : 'rgba(54, 162, 235, 0.7)'
+      );
+
+      if (ctx && chartData.length > 0 && typeof Chart !== 'undefined') {
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: 'Unidades Vendidas',
+              data: chartData,
+              backgroundColor: backgroundColors,
+              borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: { display: true, text: 'Total de Unidades Vendidas por Producto', font: { size: 16, weight: 'bold' } },
+              legend: { display: false }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Cantidad Vendida (Eje Y)', font: { weight: 'bold' } },
+                ticks: { precision: 0 }
+              },
+              x: { title: { display: true, text: 'Producto (Eje X)', font: { weight: 'bold' } } }
+            }
+          }
+        });
+      }
+    });
+  </script>
+  <?php endif; ?>
 </body>
 
 </html>

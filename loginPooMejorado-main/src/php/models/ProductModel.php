@@ -27,6 +27,7 @@ class ProductModel extends DbModel
                 precio, 
                 stock_actual,
                 stock_comprometido,
+                unidades_vendidas,
                 -- CALCULAR EL STOCK DISPONIBLE (lo que el cliente puede reservar)
                 (stock_actual - stock_comprometido) AS stock_disponible, 
                 imagen_url 
@@ -232,28 +233,61 @@ class ProductModel extends DbModel
      * Este método es llamado por el Administrador al confirmar un pedido.
      * @return bool|string True si éxito, o error de DB (string).
      */
+   // En src/php/models/ProductModel.php, alrededor de la línea 184
     public function confirmSaleDeductStock(int $productId, int $quantity): bool|string
     {
-        // 1. Reducir stock_actual (el inventario real baja porque el producto se vendió)
-        // 2. Reducir stock_comprometido (ya no está "reservado", está "vendido")
-        // La condición stock_actual >= ? es una seguridad extra.
+    // 1. Reducir stock_actual
+    // 2. Reducir stock_comprometido
+    // 3. AUMENTAR unidades_vendidas <-- ¡EL CAMBIO CRÍTICO!
 
-        $sql = "UPDATE productos 
-                SET stock_actual = stock_actual - ?, 
-                    stock_comprometido = stock_comprometido - ? 
-                WHERE id = ? AND stock_actual >= ?";
+    $sql = "UPDATE productos 
+            SET stock_actual = stock_actual - ?, 
+                stock_comprometido = stock_comprometido - ?,
+                unidades_vendidas = unidades_vendidas + ? 
+            WHERE id = ? AND stock_actual >= ?";
 
-        // Tipos: iiii (cantidad, cantidad, id, cantidad)
-        $result = $this->runDmlStatement($sql, "iiii", $quantity, $quantity, $productId, $quantity);
+             // Tipos: iiiii (cantidad, cantidad, cantidad, id, cantidad)
+             // Se pasan 5 parámetros:
+             // 1. $quantity (para stock_actual -)
+             // 2. $quantity (para stock_comprometido -)
+                // 3. $quantity (para unidades_vendidas +) <-- Nuevo
+                // 4. $productId (para WHERE id)
+             // 5. $quantity (para WHERE stock_actual)
 
-        if (is_int($result) && $result === 1) {
-            return true;
-        }
+    $result = $this->runDmlStatement($sql, "iiiii", $quantity, $quantity, $quantity, $productId, $quantity); 
 
-        if (is_string($result)) {
-            return "Error de DB al confirmar venta: {$result}";
-        }
-
-        return "Error: Stock insuficiente o producto no encontrado al confirmar.";
+    if (is_int($result) && $result === 1) {
+        return true;
     }
+
+    if (is_string($result)) {
+        return "Error de DB al confirmar venta: {$result}";
+    }
+
+     return "Error: Stock insuficiente o producto no encontrado al confirmar.";
+    }
+
+    public function getSoldQuantities(): array|string
+    {
+    // 1. Consulta: Selecciona la columna 'unidades_vendidas'
+    $sql = "SELECT unidades_vendidas FROM productos WHERE unidades_vendidas > 0";
+
+    $result = $this->runSelectStatement($sql, "");
+
+    if (is_string($result)) {
+        return "Error de DB al leer datos de ventas: " . $result;
+    }
+
+    $salesData = [];
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            // 2. Importante: Convierte el valor a INT antes de añadirlo al array
+            $salesData[] = (int) $row['unidades_vendidas'];
+        }
+    }
+    
+    return $salesData;
+    }
+
+
 }

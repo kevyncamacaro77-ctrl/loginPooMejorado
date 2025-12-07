@@ -110,6 +110,13 @@
     background: #c0392b;
 }
 
+/* Alinear el formulario de logout a la derecha cuando está fuera del sidebar */
+.logout-form {
+    display: flex;
+    justify-content: flex-end; /* Empuja el botón hacia la derecha */
+    padding: 12px 0; /* Espaciado vertical consistente */
+}
+
 /* =========================================
    CONTENIDO PRINCIPAL
    ========================================= */

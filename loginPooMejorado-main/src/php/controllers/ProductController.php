@@ -163,6 +163,14 @@ class ProductController
     {
         $this->checkAdminAccess();
 
+        // Verificar CSRF
+        $token = $_POST['csrf_token'] ?? '';
+        if (!SecurityHelper::verifyCsrfToken($token)) {
+            $_SESSION['update_error'] = "Error de seguridad: token CSRF inválido.";
+            header("Location: ../../views/dashboard.php");
+            exit;
+        }
+
         $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
         $newStock = filter_input(INPUT_POST, 'new_stock', FILTER_VALIDATE_INT);
 
@@ -172,8 +180,18 @@ class ProductController
             exit;
         }
 
+        // Registramos estado previo para diagnóstico
+        $before = $this->productModel->getProductById($productId);
+        $logLine = date('Y-m-d H:i:s') . " | UPDATE_STOCK_REQUEST | product_id={$productId} | newStock={$newStock} | before=" . json_encode($before) . PHP_EOL;
+        @file_put_contents(__DIR__ . '/debug_log.txt', $logLine, FILE_APPEND);
+
         // NUEVA REGLA: El administrador actualiza el stock_actual (físico).
         $result = $this->productModel->updateStockDirect($productId, $newStock);
+
+        // Registramos estado posterior para diagnóstico
+        $after = $this->productModel->getProductById($productId);
+        $logLine2 = date('Y-m-d H:i:s') . " | UPDATE_STOCK_RESULT | product_id={$productId} | result=" . json_encode($result) . " | after=" . json_encode($after) . PHP_EOL;
+        @file_put_contents(__DIR__ . '/debug_log.txt', $logLine2, FILE_APPEND);
 
         if ($result === true) {
             $_SESSION['cart_success'] = "Stock actualizado con éxito.";
