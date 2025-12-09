@@ -96,7 +96,7 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
   <link rel="stylesheet" href="../styles/css/preguntas.css">
   <link rel="stylesheet" href="../styles/css/ContactForm.css">
   <link rel="stylesheet" href="../styles/css/dashboard.css">
-  <link rel="stylesheet" href="../styles/css/pasantia.css">
+  <link rel="stylesheet" href="../styles/css/estadistica.css">
   <title>Dashboard - Lubriken</title>
 </head>
 
@@ -365,6 +365,8 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
       </section>
 
     </section>
+
+    
       <!-- Reporte de Pasantías: análisis y gráfico -->
 
       <?php
@@ -375,11 +377,11 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
       <?php if ($user_rol === 'administrador'): // <--- INICIO DE LA CONDICIÓN ?>
 
       <article class="reporte-pasantias card p-4 mb-4">
-        <h2>📊 Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
+        <h2> Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
         <hr>
 
         <article class="stats-section mb-4">
-          <h4>1. Variable de Estudio y Muestra (Requisito A)</h4>
+          <h4>1. Variable de Estudio y Muestra </h4>
           <p>
             <strong>Variable de Estudio:</strong> Cantidad Total Vendida por Producto (Variable Cuantitativa Discreta).
           </p>
@@ -390,7 +392,7 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
               </article>
 
         <article class="stats-section mb-4">
-          <h4>2. Medidas de Tendencia Central (Requisitos B y C)</h4>
+          <h4>2. Medidas de Tendencia Central </h4>
           <table>
             <thead>
               <tr>
@@ -424,7 +426,7 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
         </article>
 
         <article class="stats-section">
-          <h4>3. Representación Gráfica (Requisito D)</h4>
+          <h4>3. Representación Gráfica </h4>
           <article class="ventas-wrapper">
             <canvas id="ventasChart"></canvas>
             </article>
