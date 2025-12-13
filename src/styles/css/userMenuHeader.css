@@ -1,0 +1,361 @@
+@charset "UTF-8";
+
+/* Variables */
+:root {
+  --primary-color: orange;
+  --secondary-color: #3d4295;
+  --ternary-color: #5c61e1;
+  --font-color: #333333;
+  --blank-color: #ffffff;
+}
+
+/* ========================================= */
+/* ESTILOS BASE (Escritorio por defecto)     */
+/* ========================================= */
+header {
+  z-index: 1000;
+  display: flex;
+  position: sticky;
+  top: 0;
+  background-color: var(--ternary-color);
+  align-items: center;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+header img {
+  object-fit: cover;
+}
+
+/* Contenedor del menú de escritorio */
+header #desktop-navbar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+header .desktop-menu {
+  display: flex;
+}
+
+header .desktop-menu ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 15px;
+  align-items: center;
+}
+
+header .desktop-menu ul li {
+  color: var(--blank-color);
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Ocultar elementos móviles en escritorio */
+header #mobile-menu,
+header #mobile-menu-btn {
+  display: none;
+}
+
+/* ========================================= */
+/* CARRITO ESTILO SHEIN (ADAPTABLE)          */
+/* ========================================= */
+
+.cart-icon-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.cart-link-main {
+  text-decoration: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cart-badge {
+  background-color: #ff4081;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 10px;
+  position: relative;
+  top: -8px;
+  left: -2px;
+}
+
+/* Dropdown Flotante */
+.shein-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 320px;
+
+  /* CAMBIO CLAVE: Usamos variables para el fondo y borde */
+  background-color: var(--bg-container, #ffffff);
+  border: 1px solid var(--input-border, #e0e0e0);
+  color: var(--text-main, #333333);
+
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  z-index: 9999;
+  cursor: default;
+}
+
+.cart-icon-container:hover .shein-dropdown {
+  display: block;
+}
+
+ul.shein-list {
+  display: flex !important;
+  flex-direction: column !important;
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-height: 350px;
+  overflow-y: auto;
+
+  /* Fondo adaptable */
+  background-color: var(--bg-container, #ffffff);
+}
+
+li.shein-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  padding: 12px;
+
+  /* Borde adaptable */
+  border-bottom: 1px solid var(--input-border, #f0f0f0);
+  gap: 12px;
+  width: 100%;
+}
+
+li.shein-item:hover {
+  /* Fondo hover: usa una transparencia oscura o clara según el tema */
+  background-color: rgba(128, 128, 128, 0.1);
+}
+
+.shein-img-wrapper {
+  margin-right: 0;
+}
+
+.shein-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 80px;
+}
+
+.shein-name {
+  font-size: 0.9rem;
+  /* Color de texto adaptable */
+  color: var(--text-main, #333);
+  margin-bottom: 4px;
+  line-height: 1.3;
+  font-weight: normal;
+}
+
+.shein-price {
+  font-weight: bold;
+  color: #fa6338;
+  font-size: 0.95rem;
+}
+
+.shein-footer {
+  padding: 15px;
+  /* Fondo y borde adaptable */
+  background-color: var(--bg-container, #ffffff);
+  border-top: 1px solid var(--input-border, #eee);
+}
+
+.shein-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--text-main, #222);
+}
+
+.shein-btn-checkout {
+  display: block;
+  background-color: #000;
+  /* Botón negro estilo Shein */
+  color: #fff !important;
+  text-align: center;
+  padding: 12px;
+  text-decoration: none;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  transition: 0.3s;
+  border-radius: 4px;
+}
+
+/* Ajuste opcional: Botón blanco en modo oscuro para que contraste */
+body.dark-mode .shein-btn-checkout {
+  background-color: #fff;
+  color: #000 !important;
+}
+
+.shein-btn-checkout:hover {
+  opacity: 0.8;
+}
+
+
+/* ========================================= */
+/* VISTA MÓVIL (Restauración del diseño)     */
+/* ========================================= */
+
+@media (max-width: 768px) {
+
+  /* 1. Ocultar la barra de escritorio completa */
+  header #desktop-navbar {
+    display: none !important;
+  }
+
+  /* 2. Convertir el header en el botón flotante */
+  header {
+    position: fixed;
+    top: auto;
+    bottom: 2%;
+    left: 2%;
+    height: 3.5em;
+    width: 3.5em;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  /* 3. Estilo del Botón Hamburguesa */
+  header #mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    background-color: var(--secondary-color);
+    border: 1px solid var(--primary-color);
+    color: white;
+    font-size: 1.5rem;
+    z-index: 1000;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 4. El Menú Desplegable (Overlay) */
+  header #mobile-menu {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 100%;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--ternary-color);
+    transition: right 0.3s ease-in-out;
+    z-index: 999;
+  }
+
+  /* Contenido del menú móvil */
+  header #mobile-menu ul {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-end;
+    padding-left: 1.2em;
+    padding-bottom: 5.5em;
+    list-style: none;
+    gap: 15px;
+    height: 100%;
+  }
+
+  header #mobile-menu ul li {
+    font-size: 1.5rem;
+  }
+
+  header #mobile-menu ul li a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  header #mobile-menu ul li:hover {
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+  }
+
+  /* 5. ESTILOS CARRITO EN MÓVIL (Acordeón) */
+  .mobile-dropdown-content {
+    position: static !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    /* Fondo oscuro transparente */
+    display: none;
+    margin-top: 10px;
+    color: white !important;
+    /* Texto blanco forzado en móvil */
+  }
+
+  /* Forzar textos blancos en el menú móvil */
+  .mobile-dropdown-content .shein-name,
+  .mobile-dropdown-content .shein-total-row,
+  .mobile-dropdown-content .shein-info {
+    color: #fff !important;
+  }
+
+  .mobile-dropdown-content .shein-list,
+  .mobile-dropdown-content .shein-footer {
+    background-color: transparent !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .mobile-dropdown-content .shein-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Animación de despliegue */
+  .cart-icon-container.active-cart .mobile-dropdown-content {
+    display: block !important;
+    animation: slideDown 0.3s ease;
+  }
+
+  li.mobile-cart-trigger {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

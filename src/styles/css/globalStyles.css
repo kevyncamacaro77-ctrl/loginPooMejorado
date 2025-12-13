@@ -1,0 +1,98 @@
+@import url("https://fonts.googleapis.com/css2?family=Momo+Trust+Display&family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&display=swap");
+/* globalStyles.css */
+
+:root {
+  /* --- COLORES BASE (Modo Claro) --- */
+  --bg-body: #f4f6f8;
+  /* Un gris muy claro, mejor que blanco puro */
+  --bg-container: #ffffff;
+  --text-main: #333333;
+  --text-secondary: #555555;
+  --input-border: #ddd;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+
+  /* Tus colores de marca */
+  --primary-color: orange;
+  --secondary-color: #3d4295;
+  --ternary-color: #5c61e1;
+  --font-color: #333333;
+  --blank-color: #ffffff;
+
+  /* Gradiente Login */
+  --bg-gradient-start: #3d4295;
+  --bg-gradient-end: #5c61e1;
+}
+
+body.dark-mode {
+  /* --- COLORES MODO OSCURO (Ajustado) --- */
+
+  /* NO es negro puro (#000), es un gris azulado muy oscuro (Gunmetal) */
+  --bg-body: #1a1b26;
+
+  /* Las tarjetas serán un poco más claras que el fondo para resaltar */
+  --bg-container: #24253a;
+
+  --text-main: #e2e2e2;
+  /* Blanco suave */
+  --text-secondary: #a0a0a0;
+  --input-border: #444;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+
+  /* Cambiamos el color de fuente base */
+  --font-color: #e2e2e2;
+
+  /* Gradiente Login Oscuro */
+  --bg-gradient-start: #0f1020;
+  --bg-gradient-end: #1a1b35;
+}
+
+body {
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/*----------------------------------------------------------------------------*/
+* {
+  padding: 0;
+  margin: 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  font-family: "Red Hat Display", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  scroll-behavior: smooth;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+}
+
+body #testimonio-pepon {
+  text-align: center;
+  margin: 15px;
+}
+
+body .errorMsg {
+  color: red;
+  font-weight: bold;
+  border: 1px solid red;
+  padding: 10px;
+}
+
+footer {
+  width: 100%;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  padding: 20px 0;
+  margin-top: 50px;
+  text-align: center;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  position: relative;
+}

@@ -1,0 +1,16 @@
+Controlador ejecutado: 2025-12-04 20:22:04
+Acción recibida: login
+Controlador ejecutado: 2025-12-04 20:25:33
+Acción recibida: logout
+Controlador ejecutado: 2025-12-04 20:27:09
+Acción recibida: login
+Controlador ejecutado: 2025-12-04 20:30:50
+Acción recibida: login
+Controlador ejecutado: 2025-12-04 21:21:37
+Acción recibida: logout
+Controlador ejecutado: 2025-12-04 21:21:43
+Acción recibida: login
+Controlador ejecutado: 2025-12-04 21:31:12
+Acción recibida: logout
+Controlador ejecutado: 2025-12-04 21:31:16
+Acción recibida: login
