@@ -1,93 +1,106 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const nav = document.getElementById("navigation-bar");
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
   const mobileMenu = document.getElementById("mobile-menu");
   
+  // Seleccionamos los items del menú
   const menuMobileLists = document.querySelectorAll("#mobile-menu > ul > li");
   
   let isActive = false;
-  let isAnimating = false; // 🔒 NUEVA VARIABLE DE BLOQUEO
+  let isAnimating = false; // Semáforo para evitar clicks múltiples
 
-  // Eventos de Scroll (Se mantienen igual)
-  window.addEventListener("scroll", () => (mobileMenuBtn.style.opacity = ".5"));
-  window.addEventListener("scrollend", () => {
-    const currentScroll = window.scrollY || document.documentElement.scrollTop;
-    const atBottom = window.innerHeight + currentScroll >= document.body.scrollHeight;
-    atBottom ? (mobileMenuBtn.style.opacity = ".5") : (mobileMenuBtn.style.opacity = ".7");
-  });
-
-  // CLICK DE LOS ÍTEMS DEL MENÚ MÓVIL
+  // --- 1. EVENTOS DE LOS ÍTEMS DEL MENÚ ---
   menuMobileLists.forEach(item => {
+    // Ignorar el click si es el botón del carrito (para que no cierre el menú si quieres usar el dropdown)
     if (item.classList.contains("mobile-cart-trigger")) {
         return; 
     }
 
     item.addEventListener("click", function () {
-      // Si ya se está animando, ignoramos el click
-      if (isAnimating) return; 
-      
-      cerrarMenuConAnimacion();
-      isActive = false;
+      if (isActive && !isAnimating) {
+        cerrarMenu();
+      }
     });
   });
 
-  // CLICK DEL BOTÓN HAMBURGUESA
-  mobileMenuBtn.addEventListener("click", function () {
-    // 🔒 SI SE ESTÁ MOVIENDO, NO HACEMOS NADA
-    if (isAnimating) return;
+  // --- 2. EVENTO DEL BOTÓN HAMBURGUESA ---
+  if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener("click", function () {
+        if (isAnimating) return; // Si se está moviendo, ignorar click
 
-    if (!isActive) {
-      configurarMenu("✖", "flex", "0");
-      isActive = true;
-      return;
-    }
-    cerrarMenuConAnimacion();
-    isActive = false;
-  });
+        if (!isActive) {
+          abrirMenu();
+        } else {
+          cerrarMenu();
+        }
+      });
+  }
 
-  // REDIMENSIONAR PANTALLA
+  // --- 3. FUNCIONES DE APERTURA/CIERRE SEGURAS ---
+
+  function abrirMenu() {
+    isAnimating = true;
+    mobileMenuBtn.innerHTML = "✖";
+    mobileMenu.style.display = "flex";
+    
+    // Forzamos al navegador a reconocer el cambio de display antes de animar
+    void mobileMenu.offsetWidth; 
+
+    requestAnimationFrame(() => {
+      mobileMenu.style.right = "0";
+    });
+
+    // Esperar a que termine la transición O forzar desbloqueo en 400ms
+    esperarFinAnimacion(() => {
+        isActive = true;
+        isAnimating = false;
+    });
+  }
+  
+  function cerrarMenu() {
+    isAnimating = true;
+    mobileMenuBtn.innerHTML = "☰";
+    mobileMenu.style.right = "100%";
+
+    // Esperar a que termine la transición O forzar desbloqueo en 400ms
+    esperarFinAnimacion(() => {
+        mobileMenu.style.display = "none";
+        isActive = false;
+        isAnimating = false;
+    });
+  }
+
+  // Función auxiliar para manejar la transición con seguridad
+  function esperarFinAnimacion(callback) {
+    let finished = false;
+
+    const onTransitionEnd = () => {
+      if (finished) return;
+      finished = true;
+      mobileMenu.removeEventListener("transitionend", onTransitionEnd);
+      callback();
+    };
+
+    // 1. Escuchar el evento real del navegador
+    mobileMenu.addEventListener("transitionend", onTransitionEnd);
+
+    // 2. TEMPORIZADOR DE SEGURIDAD (Backup)
+    // Si por alguna razón 'transitionend' no se dispara en 400ms, ejecutamos igual.
+    setTimeout(() => {
+        if (!finished) {
+            onTransitionEnd();
+        }
+    }, 400); // 400ms es un poco más que los 0.3s típicos de transición CSS
+  }
+
+  // --- 4. REDIMENSIONAR PANTALLA ---
   window.addEventListener("resize", function () {
-    if (isActive) {
-      // Forzamos el cierre sin animación para evitar bugs visuales al rotar pantalla
+    if (window.innerWidth > 768 && isActive) {
+      // Si agrandan la pantalla, resetear todo sin animación
       mobileMenu.style.display = "none";
       mobileMenu.style.right = "100%";
       mobileMenuBtn.innerHTML = "☰";
       isActive = false;
-      isAnimating = false; // Liberamos el bloqueo por si acaso
+      isAnimating = false;
     }
   });
-
-  // FUNCIONES AUXILIARES
-
-  function configurarMenu(btnText, menuDisplay, menuRight) {
-    isAnimating = true; // 🔒 BLOQUEAMOS CLICKS
-    
-    mobileMenuBtn.innerHTML = btnText;
-    mobileMenu.style.display = menuDisplay;
-    
-    requestAnimationFrame(() => {
-      mobileMenu.style.right = menuRight;
-    });
-
-    // Detectar cuando termina de ABRIRSE para desbloquear
-    const onOpenEnd = () => {
-        isAnimating = false; // 🔓 DESBLOQUEAMOS
-        mobileMenu.removeEventListener("transitionend", onOpenEnd);
-    };
-    mobileMenu.addEventListener("transitionend", onOpenEnd);
-  }
-  
-  function cerrarMenuConAnimacion() {
-    isAnimating = true; // 🔒 BLOQUEAMOS CLICKS
-
-    mobileMenuBtn.innerHTML = "☰";
-    mobileMenu.style.right = "100%";
-
-    const handleTransitionEnd = () => {
-      mobileMenu.style.display = "none";
-      isAnimating = false; // 🔓 DESBLOQUEAMOS CLICKS
-      mobileMenu.removeEventListener("transitionend", handleTransitionEnd);
-    };
-    mobileMenu.addEventListener("transitionend", handleTransitionEnd);
-  }
 });

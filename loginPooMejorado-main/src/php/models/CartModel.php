@@ -6,8 +6,6 @@ require_once 'ProductModel.php';
 
 class CartModel extends DbModel
 {
-    public const MAX_PER_ITEM = 5;
-
     public function __construct(mysqli $connection)
     {
         parent::__construct($connection);
@@ -78,95 +76,43 @@ class CartModel extends DbModel
         return (int) $this->conn->insert_id;
     }
 
-  public function addItem(int $userId, int $productId, int $quantity, ProductModel $productModel): bool|string
+    public function addItem(int $userId, int $productId, int $quantity, ProductModel $productModel): bool|string
     {
-        // 1. Obtener ID del carrito o crearlo
         $cartId = $this->getOrCreateCartId($userId);
         if (is_string($cartId))
             return $cartId;
 
-        // INICIO DE LA TRANSACCIÓN (Es crucial que las operaciones sean atómicas)
-        $this->conn->begin_transaction();
+        // 1. AUMENTAR STOCK COMPROMETIDO
+        $stock_result = $productModel->manipulateCompromisedStock($productId, $quantity);
+        if (is_string($stock_result))
+            return $stock_result;
 
-        try {
-            // 2. OBTENER STOCK DISPONIBLE (CON BLOQUEO DE FILA: FOR UPDATE)
-            $sqlStock = "SELECT (stock_actual - stock_comprometido) AS stock_disponible FROM productos WHERE id = ? FOR UPDATE";
-            $resultStock = $this->runSelectStatement($sqlStock, "i", $productId);
+        // 2. AÑADIR O ACTUALIZAR DETALLE
+        $sql_update = "
+            UPDATE detalles_carrito d JOIN carritos_activos c ON d.carrito_id = c.id
+            SET d.cantidad = d.cantidad + ?
+            WHERE c.user_id = ? AND d.producto_id = ?
+        ";
+        $affected = $this->runDmlStatement($sql_update, "iii", $quantity, $userId, $productId);
 
-            if (is_string($resultStock)) {
-                $this->conn->rollback();
-                return "Error al verificar stock: {$resultStock}";
-            }
-            if ($resultStock->num_rows === 0) {
-                $this->conn->rollback();
-                return "Producto no encontrado.";
-            }
-            
-            $availableStock = (int) $resultStock->fetch_assoc()['stock_disponible'];
-
-            // 2.1 OBTENER CANTIDAD ACTUAL EN CARRITO (BLOQUEO DE FILA)
-            $sqlCurrentQty = "SELECT d.cantidad FROM detalles_carrito d JOIN carritos_activos c ON d.carrito_id = c.id WHERE c.user_id = ? AND d.producto_id = ? FOR UPDATE";
-            $resultCurrentQty = $this->runSelectStatement($sqlCurrentQty, "ii", $userId, $productId);
-            
-            $currentQuantity = 0;
-            if (!is_string($resultCurrentQty) && $resultCurrentQty->num_rows > 0) {
-                 $currentQuantity = (int) $resultCurrentQty->fetch_assoc()['cantidad'];
-            }
-            
-            $newTotalQuantity = $currentQuantity + $quantity;
-
-            // 2.2 VALIDACIÓN DE LÍMITE DE CANTIDAD (NUEVO)
-            if ($newTotalQuantity > self::MAX_PER_ITEM) {
-                $this->conn->rollback();
-                return "Límite excedido. Solo puedes tener " . self::MAX_PER_ITEM . " unidades de este producto en tu carrito. (Actualmente tienes " . $currentQuantity . ")";
-            }
-            
-            // 2.3 VALIDACIÓN CRÍTICA: Se comprueba que el stock disponible cubra la cantidad solicitada
-            if ($availableStock < $quantity) {
-                $this->conn->rollback();
-                return "Stock insuficiente. Solo quedan " . $availableStock . " unidades disponibles.";
-            }
-            
-            // 3. AUMENTAR STOCK COMPROMETIDO
-            $stock_result = $productModel->manipulateCompromisedStock($productId, $quantity);
-            if (is_string($stock_result)) {
-                $this->conn->rollback();
-                return $stock_result;
-            }
-
-            // 4. AÑADIR O ACTUALIZAR DETALLE
-            $sql_update = "
-                UPDATE detalles_carrito d JOIN carritos_activos c ON d.carrito_id = c.id
-                SET d.cantidad = d.cantidad + ?
-                WHERE c.user_id = ? AND d.producto_id = ?
-            ";
-            $affected = $this->runDmlStatement($sql_update, "iii", $quantity, $userId, $productId);
-
-            if (is_string($affected)) {
-                $this->conn->rollback();
-                return "Error al actualizar carrito: {$affected}";
-            }
-
-            if ($affected === 0) {
-                $sql_insert = "INSERT INTO detalles_carrito (carrito_id, producto_id, cantidad) VALUES (?, ?, ?)";
-                $insert_res = $this->runDmlStatement($sql_insert, "iii", $cartId, $productId, $quantity);
-
-                if (is_string($insert_res)) {
-                    $this->conn->rollback();
-                    return "Error al añadir ítem: {$insert_res}";
-                }
-            }
-
-            // 5. ACTUALIZAR FECHA Y CONFIRMAR TRANSACCIÓN
-            $this->touchCartDate($cartId);
-            $this->conn->commit();
-            return true;
-
-        } catch (\Throwable $e) {
-            $this->conn->rollback();
-            error_log("CartModel addItem transaction error: " . $e->getMessage());
-            return "Error interno del sistema al procesar la reserva.";
+        if (is_string($affected)) {
+            $productModel->manipulateCompromisedStock($productId, -$quantity); // Revertir
+            return "Error al actualizar carrito: {$affected}";
         }
+
+        if ($affected === 0) {
+            $sql_insert = "INSERT INTO detalles_carrito (carrito_id, producto_id, cantidad) VALUES (?, ?, ?)";
+            $insert_res = $this->runDmlStatement($sql_insert, "iii", $cartId, $productId, $quantity);
+
+            if (is_string($insert_res)) {
+                $productModel->manipulateCompromisedStock($productId, -$quantity); // Revertir
+                return "Error al añadir ítem: {$insert_res}";
+            }
+        }
+
+        // 3. ACTUALIZAR FECHA
+        $this->touchCartDate($cartId);
+        return true;
     }
 
     public function removeItem(int $userId, int $productId, ProductModel $productModel): bool|string
@@ -199,93 +145,36 @@ class CartModel extends DbModel
         $this->touchCartDate($cartId);
         return true;
     }
-public function updateQuantity(int $userId, int $productId, int $newQuantity, ProductModel $productModel): bool|string
-    // ^^^^^^^^^^^^^^^ ASEGÚRATE DE USAR ESTE NOMBRE
+
+    public function updateQuantity(int $userId, int $productId, int $newQuantity, ProductModel $productModel): bool|string
     {
-        // 1. Validaciones básicas de límite de negocio
-        if ($newQuantity < 1) {
-            // El usuario debería usar el botón de eliminar para quitar un ítem.
-            return "La cantidad mínima es 1.";
+        $sql_find = "SELECT d.cantidad, c.id FROM detalles_carrito d JOIN carritos_activos c ON d.carrito_id = c.id WHERE c.user_id = ? AND d.producto_id = ?";
+        $result = $this->runSelectStatement($sql_find, "ii", $userId, $productId);
+
+        if (is_string($result) || $result->num_rows === 0)
+            return "Error: Ítem no encontrado.";
+
+        $row = $result->fetch_assoc();
+        $oldQuantity = (int) $row['cantidad'];
+        $cartId = (int) $row['id'];
+        $difference = $newQuantity - $oldQuantity;
+
+        // Ajustar stock comprometido
+        $stock_res = $productModel->manipulateCompromisedStock($productId, $difference);
+        if (is_string($stock_res))
+            return $stock_res;
+
+        // Actualizar cantidad
+        $sql_upd = "UPDATE detalles_carrito SET cantidad = ? WHERE carrito_id = ? AND producto_id = ?";
+        $upd_res = $this->runDmlStatement($sql_upd, "iii", $newQuantity, $cartId, $productId);
+
+        if (is_string($upd_res)) {
+            $productModel->manipulateCompromisedStock($productId, -$difference); // Revertir
+            return "Error al actualizar cantidad.";
         }
-        
-        // VALIDACIÓN CRÍTICA DEL LÍMITE DE 5 UNIDADES
-        // (Asume que self::MAX_PER_ITEM = 5 está definido en la clase)
-        if ($newQuantity > self::MAX_PER_ITEM) {
-            return "Límite excedido. Solo puedes tener " . self::MAX_PER_ITEM . " unidades de este producto en total.";
-        }
-        
-        $this->conn->begin_transaction();
-        
-        try {
-            // 2. Obtener datos del carrito y producto (CON BLOQUEO FOR UPDATE)
-            $sqlData = "
-                SELECT 
-                    d.cantidad AS old_quantity, 
-                    p.stock_actual, 
-                    p.stock_comprometido
-                FROM detalles_carrito d
-                JOIN carritos_activos c ON d.carrito_id = c.id
-                JOIN productos p ON d.producto_id = p.id
-                WHERE c.user_id = ? AND d.producto_id = ? 
-                FOR UPDATE
-            ";
-            $resultData = $this->runSelectStatement($sqlData, "ii", $userId, $productId);
-            
-            if (is_string($resultData) || $resultData->num_rows === 0) {
-                $this->conn->rollback();
-                return "Producto no encontrado en el carrito o error de DB.";
-            }
 
-            $data = $resultData->fetch_assoc();
-            $oldQuantity = (int) $data['old_quantity'];
-            $stockActual = (int) $data['stock_actual'];
-            $stockComprometido = (int) $data['stock_comprometido'];
-            
-            $stockChange = $newQuantity - $oldQuantity; // Diferencia de stock a comprometer/liberar
-
-            // 3. Chequeo de Stock si hay aumento ($stockChange > 0)
-            if ($stockChange > 0) {
-                $availableStock = $stockActual - $stockComprometido;
-                if ($availableStock < $stockChange) {
-                    $this->conn->rollback();
-                    return "Stock insuficiente. Solo puedes aumentar la cantidad en " . $availableStock . " unidad(es) más.";
-                }
-            }
-            
-            // 4. Actualizar Compromiso de Stock (si hubo cambio)
-            if ($stockChange !== 0) {
-                $stock_result = $productModel->manipulateCompromisedStock($productId, $stockChange);
-                if (is_string($stock_result)) {
-                    $this->conn->rollback();
-                    return $stock_result;
-                }
-            }
-
-            // 5. Actualizar Detalle del Carrito
-            $sql_update_detail = "
-                UPDATE detalles_carrito d
-                JOIN carritos_activos c ON d.carrito_id = c.id
-                SET d.cantidad = ?
-                WHERE c.user_id = ? AND d.producto_id = ?
-            ";
-            $update_res = $this->runDmlStatement($sql_update_detail, "iii", $newQuantity, $userId, $productId);
-            
-            if (is_string($update_res)) {
-                $this->conn->rollback();
-                return "Error al actualizar la cantidad en el carrito: {$update_res}";
-            }
-            
-            // 6. Finalizar
-            $cartId = $this->getOrCreateCartId($userId); 
-            $this->touchCartDate($cartId);
-            $this->conn->commit();
-            return true;
-
-        } catch (\Throwable $e) {
-            $this->conn->rollback();
-            error_log("CartModel updateQuantity transaction error: " . $e->getMessage());
-            return "Error interno del sistema al procesar la actualización.";
-        }
+        $this->touchCartDate($cartId);
+        return true;
     }
 
     // ----------------------------------------------------

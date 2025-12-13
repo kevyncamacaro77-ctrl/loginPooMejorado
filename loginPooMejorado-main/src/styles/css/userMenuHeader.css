@@ -218,37 +218,6 @@ body.dark-mode .shein-btn-checkout {
   opacity: 0.8;
 }
 
-/* Logout en header: posición fija a la derecha del viewport */
-header {
-  /* header ya es sticky; aseguramos contexto de posicionamiento */
-  position: sticky;
-}
-
-.header-logout {
-  position: absolute;
-  right: 1rem; /* separación desde el borde derecho */
-  top: 50%;
-  transform: translateY(-50%);
-  margin: 0;
-  z-index: 1100;
-}
-
-.header-logout .logout-btn {
-  background: #e74c3c;
-  border: none;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* En pantallas pequeñas, mover botón dentro del menú móvil (oculto por defecto) */
-@media (max-width: 900px) {
-  .header-logout { position: static; transform: none; margin-left: auto; }
-  header .desktop-menu { gap: 8px; }
-}
-
 
 /* ========================================= */
 /* VISTA MÓVIL (Restauración del diseño)     */

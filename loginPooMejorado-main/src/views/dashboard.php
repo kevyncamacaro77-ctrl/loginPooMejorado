@@ -4,6 +4,8 @@ session_start();
 
 // 1. INCLUSIÓN DE DEPENDENCIAS
 require_once '../php/requires_central.php';
+// AGREGA ESTO AQUÍ:
+require_once '../php/services/ThemeHelper.php';
 
 // 2. SETUP DE CONEXIÓN E INYECCIÓN
 $db = new Database();
@@ -44,43 +46,23 @@ if ($user_logged_in && $user_rol !== 'administrador') {
   }
 }
 
-// 7. OBTENER TOKEN CSRF
-$csrf_token = SecurityHelper::getCsrfToken();
 
-// 8. LÓGICA DE ESTADÍSTICAS (¡ESTO FALTABA!)
-require_once '../php/helpers/StatsHelper.php'; // Agregamos la clase de cálculo
+// 7. LÓGICA DE ESTADÍSTICAS (SOLO ADMINISTRADOR)
 
-// Inicializar $stats para que exista en el HTML/JS aunque esté vacío.
-$stats = [
-    'media' => 0.00,
-    'mediana' => 0.00,
-    'moda' => 0,
-    'labels' => [], // Nombres de productos para el gráfico
-    'data' => []    // Unidades vendidas para el gráfico
-];
+// Inicializar $stats con valores por defecto y 'total_items'
+$stats = ['labels' => [], 'data' => [], 'media' => 0, 'mediana' => 0, 'moda' => 0, 'total_items' => 0]; 
 
-// 8.1 **SOLO** OBTENEMOS Y CALCULAMOS SI EL ROL ES ADMINISTRADOR
-if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
-    $salesData = $productModel->getSoldQuantities(); // <-- Usamos el modelo inicializado
-
-    if (!is_string($salesData) && !empty($salesData)) {
-        // Si tenemos datos, hacemos el cálculo
-        $stats['media'] = StatsHelper::calculateMean($salesData);
-        $stats['mediana'] = StatsHelper::calculateMedian($salesData);
-        $stats['moda'] = StatsHelper::calculateMode($salesData);
-
-        // Generar labels y data para el gráfico
-        foreach ($products as $p) {
-            if (($p['unidades_vendidas'] ?? 0) > 0) { 
-                $stats['labels'][] = htmlspecialchars($p['nombre']);
-                $stats['data'][] = (int) $p['unidades_vendidas'];
-            }
-        }
-    }
+if ($user_rol === 'administrador') {
+    // Llama al método que obtendrá los datos de ventas y calculará las estadísticas
+    $stats = $productModel->getSalesStatistics();
 }
 
 
+// 8. OBTENER TOKEN CSRF
+$csrf_token = SecurityHelper::getCsrfToken();
 ?>
+
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -95,15 +77,20 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
   <link rel="stylesheet" id="sobrenosotros-style" href="../styles/css/section-sobrenosotros.css">
   <link rel="stylesheet" href="../styles/css/preguntas.css">
   <link rel="stylesheet" href="../styles/css/ContactForm.css">
-  <link rel="stylesheet" href="../styles/css/dashboard.css">
   <link rel="stylesheet" href="../styles/css/estadistica.css">
+
+
   <title>Dashboard - Lubriken</title>
+  <?php
+  // Asumiendo que $connection ya existe en la vista
+  ThemeHelper::renderThemeStyles($connection);
+  ?>
 </head>
 
 <body>
   <header id="navigation-bar">
     <section id="desktop-navbar">
-      <img src="../images/lubriken-log-o-type.png" alt="logotype"  />
+      <img src="../images/lubriken-log-o-type.png" alt="logotype" />
       <nav class="desktop-menu">
         <ul>
           <li><a href="#">Inicio</a></li>
@@ -122,31 +109,32 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
               </a>
 
               <?php if (!empty($cart_items)): ?>
-                <article class="shein-dropdown">
+                <div class="shein-dropdown">
                   <ul class="shein-list">
                     <?php foreach ($cart_items as $item): ?>
                       <li class="shein-item">
-                        <article class="shein-img-wrapper">
-                          <img src="<?php echo htmlspecialchars($item['imagen_url']); ?>" alt="Producto" />
-                        </article>
-                        <article class="shein-info">
+                        <div class="shein-img-wrapper">
+                          <img src="<?php echo htmlspecialchars($item['imagen_url']); ?>" alt="Producto"
+                            style="width: 70px; height: 90px; object-fit: cover; border-radius: 4px; display: block;">
+                        </div>
+                        <div class="shein-info">
                           <span class="shein-name"><?php echo htmlspecialchars($item['nombre']); ?></span>
-                          <span class="small-muted">Cant: <?php echo $item['cantidad']; ?></span>
+                          <span style="font-size: 0.8rem; color: #888;">Cant: <?php echo $item['cantidad']; ?></span>
                           <span class="shein-price">$<?php echo number_format($item['precio'], 2); ?></span>
-                        </article>
+                        </div>
                       </li>
                     <?php endforeach; ?>
                   </ul>
-                  <article class="shein-footer">
-                    <article class="shein-total-row">
+                  <div class="shein-footer">
+                    <div class="shein-total-row">
                       <span>Total:</span>
-                      <span class="price-highlight">
+                      <span style="color: #fa6338;">
                         $<?php echo number_format(array_sum(array_column($cart_items, 'subtotal')), 2); ?>
                       </span>
-                    </article>
+                    </div>
                     <a href="userdata.php?tab=cart" class="shein-btn-checkout">VER BOLSA</a>
-                  </article>
-                </article>
+                  </div>
+                </div>
               <?php endif; ?>
             </li>
           <?php endif; ?>
@@ -183,8 +171,8 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
                 <span class="cart-badge"><?php echo $total_items_in_cart; ?></span>
               <?php endif; ?>
             </a>
-            
-            </li>
+
+          </li>
         <?php endif; ?>
 
         <?php if (isset($_SESSION['usuario'])): ?>
@@ -201,33 +189,25 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
     </nav>
 
     <button id="mobile-menu-btn">☰</button>
-    <?php if ($user_logged_in): ?>
-      <form action="../php/controllers/UserController.php" method="POST" class="logout-form header-logout">
-        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-        <input type="hidden" name="action" value="logout">
-        <button type="submit" class="logout-btn">Cerrar Sesión</button>
-      </form>
-    <?php endif; ?>
   </header>
 
   <main>
-
     <?php if ($update_error_message): ?>
-      <article class="errorMsg">
+      <div class="errorMsg" style="color: red; padding: 10px; text-align:center; border: 1px solid red; margin: 10px;">
         <?php echo htmlspecialchars($update_error_message); ?>
-      </article>
+      </div>
     <?php endif; ?>
 
     <?php if ($cart_success_message): ?>
-      <article class="successMsg">
+      <div class="successMsg" style="color: green; padding: 10px; text-align:center; border: 1px solid green; margin: 10px;">
         <?php echo htmlspecialchars($cart_success_message); ?>
-      </article>
+      </div>
     <?php endif; ?>
 
     <?php if ($cart_error_message): ?>
-      <article class="errorMsg">
+      <div class="errorMsg" style="color: red; padding: 10px; text-align:center; border: 1px solid red; margin: 10px;">
         <?php echo htmlspecialchars($cart_error_message); ?>
-      </article>
+      </div>
     <?php endif; ?>
 
 
@@ -253,26 +233,23 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
             alt="<?php echo htmlspecialchars($product['nombre']); ?>" />
 
           <figcaption><?php echo htmlspecialchars($product['nombre']); ?></figcaption>
-          <p class="product-desc <?php echo ($product['id'] == 18) ? 'product-desc--3lines' : ''; ?>"><?php echo htmlspecialchars($product['descripcion'] ?? 'Sin descripción.'); ?></p>
-          <p class="product-price">Precio: <strong><?php echo htmlspecialchars($product['precio']); ?>$</strong></p>
+          <p><?php echo htmlspecialchars($product['descripcion'] ?? 'Sin descripción.'); ?></p>
+          <p>Precio: <strong><?php echo htmlspecialchars($product['precio']); ?>$</strong></p>
 
-         <?php if ($user_rol === 'administrador'): ?>
+          <?php if ($user_rol === 'administrador'): ?>
 
             <form action="../php/controllers/ProductController.php" method="POST" class="admin-controls">
               <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
               <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-              <input type="hidden" name="stock_comprometido" value="<?php echo $product['stock_comprometido']; ?>">
-              <!-- new_stock will be calculado en submit (stock_disponible + stock_comprometido) -->
-              <input type="hidden" name="new_stock" value="<?php echo $product['stock_actual']; ?>">
 
-              <label class="small-label">Stock Disponible<?= ($product['stock_comprometido'] > 0 && $product['nombre'] !== 'Aceite para carro Inca') ? ' - ' . $product['stock_comprometido'] . ' reservada(s)' : '' ?>:</label>
-              <input type="number" name="new_stock_available" value="<?php echo ($product['stock_actual'] - $product['stock_comprometido']); ?>" min="0" class="small-input">
+              <label style="font-size: 0.8rem;">Stock Físico Total:</label>
+              <input type="number" name="new_stock" value="<?php echo $product['stock_actual']; ?>" min="0" style="width: 60px;">
 
-              <article class="admin-actions">
+              <div style="margin-top: 5px;">
                 <button type="submit" name="action" value="update_stock" class="btn admin-btn">Actualizar</button>
                 <button type="submit" name="action" value="delete_product" class="btn admin-btn delete-btn" onclick="return confirm('¿Seguro que deseas eliminar este producto?');">Eliminar</button>
-              </article>
+              </div>
             </form>
 
           <?php else: ?>
@@ -283,16 +260,29 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
               <input type="hidden" name="action" value="add_to_cart">
               <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
 
-              <?php if ($user_logged_in): ?>
-                <input type="number" name="quantity" value="1" min="1" max="<?php echo $stock; ?>"
-                  <?php echo ($stock <= 0) ? 'disabled' : ''; ?> class="small-input center">
+              <?php if ($user_logged_in): 
+                
+                // Lógica de cálculo del límite máximo:
+                // Si el stock es 1 o 0, el máximo de compra es el stock total ($stock).
+                // Si el stock es > 1, el máximo de compra es el stock - 1 (para dejar al menos 1 unidad).
+                $max_purchase = ($stock > 1) ? $stock - 1 : $stock;
+                
+                // Si el stock es 0, el max debe ser 0 para deshabilitar el input correctamente.
+                $max_attr = $stock > 0 ? $max_purchase : 0;
+            ?>
+                <input type="number" name="quantity" value="1" min="1" max="<?php echo $max_attr; ?>"
+                  <?php echo ($stock <= 0) ? 'disabled' : ''; ?> style="width: 50px; text-align: center;">
 
                 <button type="submit" class="btn" <?php echo ($stock <= 0) ? 'disabled' : ''; ?>>
                   Reservar
                 </button>
-              <?php else: ?>
-                <a href="./login.php" class="btn">Reservar</a>
-              <?php endif; ?>
+            <?php else: ?>
+                <?php if ($stock > 0): ?>
+                  <a href="./login.php" class="btn">Reservar</a>
+                <?php else: ?>
+                  <button class="btn" disabled>Agotado</button>
+                <?php endif; ?>
+            <?php endif; ?>
             </form>
 
           <?php endif; ?>
@@ -363,35 +353,29 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
           <p class="author-role">Pasante de Backend</p>
         </section>
       </section>
-
+        
     </section>
 
-    
-      <!-- Reporte de Pasantías: análisis y gráfico -->
-
-      <?php
-      // Aseguramos que $stats exista para evitar warnings si no fue calculado
-      $stats = $stats ?? ['labels' => [], 'data' => [], 'media' => 0, 'mediana' => 0, 'moda' => 0];
-      ?>
-
-      <?php if ($user_rol === 'administrador'): // <--- INICIO DE LA CONDICIÓN ?>
-
-      <article class="reporte-pasantias card p-4 mb-4">
-        <h2> Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
+    <?php 
+    // 1. Inicia la condición: solo si el rol es 'administrador'
+    if ($user_rol === 'administrador'): 
+    ?>
+      <h2 style="text-align: center;"> Reporte de Pasantías Tempranas: Análisis de Ventas</h2>
+      <div class="reporte-pasantias card p-4 mb-4">
         <hr>
-
-        <article class="stats-section mb-4">
+                        
+        <div class="stats-section mb-4">
           <h4>1. Variable de Estudio y Muestra </h4>
           <p>
-            <strong>Variable de Estudio:</strong> Cantidad Total Vendida por Producto (Variable Cuantitativa Discreta).
+            <strong>Variable de Estudio:</strong> Cantidad de Unidades Vendidas por Artículo (Variable Cuantitativa Discreta).
           </p>
           <p>
-            <strong>Muestra Utilizada:</strong> Todos los productos únicos con ventas confirmadas.
+            <strong>Muestra Utilizada:</strong> Todos los registros de unidades vendidas en pedidos 'completados'.
           </p>
-          <p class="text-muted small-muted"><small>Productos Únicos en Muestra: <?php echo count($stats['labels']); ?>.</small></p>
-              </article>
+          <p class="text-muted small-muted"><small>Muestra de Datos para Medidas Centrales (registros): <?php echo number_format(count($stats['data'] ?? []), 0); ?>.</small></p>
+        </div>
 
-        <article class="stats-section mb-4">
+        <div class="stats-section mb-4">
           <h4>2. Medidas de Tendencia Central </h4>
           <table>
             <thead>
@@ -403,41 +387,93 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
             <tbody>
               <tr>
                 <td>Media (Promedio)</td>
-                <td><?php echo number_format($stats['media'], 2); ?></td>
+                <td><?php echo number_format($stats['media'] ?? 0, 2); ?> unidades</td>
               </tr>
               <tr>
                 <td>Mediana (Valor Central)</td>
-                <td><?php echo number_format($stats['mediana'], 2); ?></td>
+                <td><?php echo number_format($stats['mediana'] ?? 0, 2); ?> unidades</td>
               </tr>
               <tr>
                 <td>Moda (Valor Más Frecuente)</td>
                 <td>
-                  <?php
-                    if (is_array($stats['moda'])) {
-                      echo 'Multimodal: ' . implode(', ', $stats['moda']) . " unidades";
-                    } else {
-                      echo $stats['moda'] . " unidades";
-                    }
+                  <?php 
+                  // El modelo devuelve la moda como una cadena (número o lista)
+                  $moda_display = $stats['moda'] ?? 0;
+                  echo htmlspecialchars($moda_display) . ' unidades';
                   ?>
                 </td>
               </tr>
+              <tr>
+                <td>**Total de Items Vendidos**</td>
+                <td>**<?php echo number_format($stats['total_items'] ?? 0, 0); ?> unidades**</td>
+              </tr>
             </tbody>
           </table>
-        </article>
-
-        <article class="stats-section">
-          <h4>3. Representación Gráfica </h4>
-          <article class="ventas-wrapper">
+        </div>
+        <div class="stats-section">
+          <h4>3. Representación Gráfica</h4>
+          <div class="ventas-wrapper">
             <canvas id="ventasChart"></canvas>
-            </article>
-          <p class="text-center small-muted" style="text-align:center; margin-top:8px;"><small>Gráfico de Barras Vertical (Columnas) mostrando el volumen de ventas por producto.</small></p>
-        </article>
-      </article>
+          </div>
+          <p class="text-center small-muted" style="text-align:center; margin-top:8px;"><small>Gráfico de Barras Vertical (Columnas) mostrando el volumen de unidades vendidas por producto.</small></p>
+        </div>
+      </div>
 
-    <?php endif; // <--- FIN DE LA CONDICIÓN ?>
-      
-<!--Preguntas frecuentes-->
-    <h3 class="faq-title">Preguntas Frecuentes</h3>
+    <?php endif; // Cierra la condición del rol 'administrador' ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          // Cargar datos desde PHP (Labels y Data vienen de la segunda consulta del modelo)
+          const chartLabels = <?php echo json_encode($stats['labels'] ?? []); ?>;
+          const chartData = <?php echo json_encode($stats['data'] ?? []); ?>;
+
+          // Definición de colores
+          const backgroundColors = [
+            'rgba(0, 123, 255, 0.7)',  // Azul Primario
+            'rgba(44, 62, 80, 0.7)',   // Azul Secundario/Oscuro
+            'rgba(255, 193, 7, 0.7)',  // Amarillo
+            'rgba(40, 167, 69, 0.7)',  // Verde
+            'rgba(220, 53, 69, 0.7)',  // Rojo
+            'rgba(108, 117, 125, 0.7)', // Gris
+          ];
+
+          if (chartLabels.length > 0 && document.getElementById('ventasChart')) {
+            const ctx = document.getElementById('ventasChart').getContext('2d');
+            new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: chartLabels,
+                datasets: [{
+                  label: 'Unidades Vendidas',
+                  data: chartData,
+                  // Usar una función para rotar los colores si hay muchos productos
+                  backgroundColor: chartLabels.map((_, i) => backgroundColors[i % backgroundColors.length]),
+                  borderColor: chartLabels.map((_, i) => backgroundColors[i % backgroundColors.length].replace('0.7', '1')),
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  title: { display: true, text: 'Total de Unidades Vendidas por Producto', font: { size: 16, weight: 'bold' } },
+                  legend: { display: false }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Cantidad Vendida (Eje Y)', font: { weight: 'bold' } },
+                    ticks: { precision: 0 } // Asegura números enteros para las unidades
+                  },
+                  x: { title: { display: true, text: 'Producto (Eje X)', font: { weight: 'bold' } } }
+                }
+              }
+            });
+          }
+        });
+      </script>
+      <h3 class="faq-title">Preguntas Frecuentes</h3>
     <section id="preguntas" class="preguntas">
       <article class="pregunta-card">
         <h4>¿Donde estan ubicados? C.A</h4>
@@ -450,8 +486,8 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
       </article>
 
       <article class="pregunta-card">
-        <h4>¿Realizan envios a domicilio? C.A</h4>
-        <p>Si, Realizamos Envio a Nivel Nacional.</p>
+        <h4>¿Realizan envios? C.A</h4>
+        <p>Tenemos envios a nivel Nacional .</p>
       </article>
 
       <article class="pregunta-card">
@@ -459,35 +495,40 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
         <p>Aceptamos pagos en efectivo y transferencias bancarias.</p>
       </article>
 
+      <article class="pregunta-card">
+       <h4>¿Tienen garantía en sus productos? C.A</h4>
+       <p>Nuestros productos cuentan con garantía contra defectos de fabricación.</p>
+      </article>
+                       
+
     </section>
-    <!--Preguntas frecuentes-->
     <section id="formulario-contacto" class="container-form">
       <h2 class="container-form__title">Formulario de contacto</h2>
       <form class="container-form__form" action="" method="POST">
 
-        <article class="container-form__div">
+        <div class="container-form__div">
           <label for="nombre_contacto">Nombre</label>
           <input class="container-form__campo" type="text" id="nombre_contacto" placeholder="Nombre">
-        </article>
+        </div>
 
-        <article class="container-form__div">
+        <div class="container-form__div">
           <label for="numero_contacto">Numero</label>
           <input class="container-form__campo" type="number" id="numero_contacto" placeholder="Numero" min="1">
-        </article>
+        </div>
 
-        <article class="container-form__div">
+        <div class="container-form__div">
           <label for="correo_contacto">Correo</label>
           <input class="container-form__campo" type="email" id="correo_contacto" placeholder="Correo">
-        </article>
+        </div>
 
-        <article class="container-form__div">
+        <div class="container-form__div">
           <label for="mensaje_contacto">Mensaje</label>
           <textarea class="container-form__campo" name="mensaje_contacto" id="mensaje_contacto" placeholder="Deja un mensaje"></textarea>
-        </article>
+        </div>
 
-        <article class="container-form__div container-form__submit alinear-derecha">
+        <div class="container-form__div container-form__submit alinear-derecha">
           <button type="submit">Enviar</button>
-        </article>
+        </div>
       </form>
 
   </main>
@@ -500,102 +541,9 @@ if ($user_rol === 'administrador') { // <--- NUEVA CONDICIÓN
   </footer>
   <script src="../js/header-component.js"></script>
   <script src="../js/theme.js"></script>
-  <script>
-    // Evita envíos dobles en formularios de administración sin eliminar
-    // el botón pulsado (para que su name/value se incluya en el POST).
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.admin-controls').forEach(function(form) {
-        form.addEventListener('click', function(e) {
-          const target = e.target;
-          if (!target) return;
-          // Si se hizo click en un botón submit
-          if (target.tagName === 'BUTTON' && target.type === 'submit') {
-            // Si ya se envió, bloquear el nuevo click
-            if (form.dataset.submitted === 'true') {
-              e.preventDefault();
-              return;
-            }
-            // Marcamos como enviado inmediatamente para evitar dobles clicks
-            form.dataset.submitted = 'true';
-            // Deshabilitamos otros botones para feedback, pero dejamos el pulsado
-            form.querySelectorAll('button[type="submit"]').forEach(function(btn) {
-              if (btn !== target) btn.disabled = true;
-            });
-          }
-        });
 
-        // Si por algún motivo la sumisión se cancela, limpiamos el flag
-        form.addEventListener('reset', function() {
-          form.dataset.submitted = 'false';
-          form.querySelectorAll('button[type="submit"]').forEach(function(btn) { btn.disabled = false; });
-        });
-        
-        // Interceptar submit para calcular new_stock real a enviar
-        form.addEventListener('submit', function(e) {
-          // Obtener inputs
-          const availInput = form.querySelector('input[name="new_stock_available"]');
-          const compInput = form.querySelector('input[name="stock_comprometido"]');
-          const hiddenNew = form.querySelector('input[name="new_stock"]');
-          if (availInput && compInput && hiddenNew) {
-            const avail = parseInt(availInput.value || '0', 10);
-            const comp = parseInt(compInput.value || '0', 10);
-            // Calculamos el stock físico total que queremos establecer
-            const computed = avail + comp;
-            hiddenNew.value = computed;
-          }
-        });
-      });
-    });
-  </script>
-  <!-- Chart.js CDN and ventasChart initialization -->
 
-  <?php if ($user_rol === 'administrador'):?>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const ctx = document.getElementById('ventasChart');
-      const chartLabels = <?php echo json_encode($stats['labels']); ?>;
-      const chartData = <?php echo json_encode($stats['data']); ?>;
-
-      const backgroundColors = chartData.map((data, index) =>
-        index < 3 ? 'rgba(255, 99, 132, 0.7)' : 'rgba(54, 162, 235, 0.7)'
-      );
-
-      if (ctx && chartData.length > 0 && typeof Chart !== 'undefined') {
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: chartLabels,
-            datasets: [{
-              label: 'Unidades Vendidas',
-              data: chartData,
-              backgroundColor: backgroundColors,
-              borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              title: { display: true, text: 'Total de Unidades Vendidas por Producto', font: { size: 16, weight: 'bold' } },
-              legend: { display: false }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: { display: true, text: 'Cantidad Vendida (Eje Y)', font: { weight: 'bold' } },
-                ticks: { precision: 0 }
-              },
-              x: { title: { display: true, text: 'Producto (Eje X)', font: { weight: 'bold' } } }
-            }
-          }
-        });
-      }
-    });
-  </script>
-  <?php endif; ?>
 </body>
 
 </html>

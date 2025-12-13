@@ -26,21 +26,21 @@
     background-color: var(--bg-container, #ffffff); /* Usa variable o blanco por defecto */
     border: 1px solid var(--input-border, #ddd);
     border-radius: 8px;
-
-    /* Anchura fija, altura flexible para evitar recortes */
-    width: 300px;
-    min-height: 420px; /* Mantiene la apariencia pero permite crecer */
-
+    
+    /* TAMAÑO FIJO DE LA TARJETA */
+    width: 300px; 
+    height: 420px; /* Altura fija para uniformidad */
+    
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     padding: 15px;
     margin: 0;
-
+    
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    overflow: visible; /* Mostrar contenido que antes quedaba oculto */
+    overflow: hidden;
 }
 
 /* Efecto Hover en la tarjeta */
@@ -74,53 +74,12 @@
     color: var(--text-secondary, #666);
     margin: 5px 0;
     text-align: center;
-}
-
-/* Descripción: limitar a 2 líneas */
-.productos figure .product-desc {
+    
+    /* Limitar texto largo */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-
-    /* Asegurar altura consistente: evita que la segunda línea quede "cortada a la mitad" */
-    line-height: 1.4; /* relativo al tamaño de fuente (1.4 * font-size) */
-    max-height: calc(1.4em * 2); /* dos líneas como fallback para navegadores no WebKit */
-    text-overflow: ellipsis;
-    margin: 8px 0 12px; /* espacio consistente alrededor de la descripción */
-    min-height: calc(1.4em * 2); /* reserva espacio para 2 líneas */
-    position: relative; /* permitir z-index si es necesario */
-    z-index: 2;
-}
-
-/* Excepción: permitir 3 líneas para descripciones largas específicas */
-.productos figure .product-desc--3lines {
-    -webkit-line-clamp: 3;
-    max-height: calc(1.4em * 3 + 0.2em);
-}
-
-/* Precio: mostrar completo sin truncar */
-.productos figure .product-price {
-    font-weight: 600;
-    color: var(--text-main, #333);
-    margin: 6px 0 8px 0;
-    position: relative;
-    z-index: 2;
-}
-
-/* Asegurar que formularios y controles no se superpongan por encima del texto */
-.productos figure form,
-.productos figure .admin-actions,
-.productos figure input,
-.productos figure button {
-    position: relative;
-    z-index: 1;
-}
-
-.small-input {
-    width: 60px;
-    margin-left: 6px;
-    vertical-align: middle;
 }
 
 /* --- BOTONES Y ESTADO --- */
@@ -150,6 +109,23 @@
 
 .productos .status.available { color: #28a745; }
 .productos .status.sold-out { color: #dc3545; }
+
+/* ESTILO PARA BOTONES DESACTIVADOS (SIN STOCK) */
+.productos .btn:disabled,
+.productos .btn[disabled] {
+    background-color: #cccccc !important; /* Gris claro */
+    color: #666666 !important;            /* Texto gris oscuro */
+    cursor: not-allowed;                  /* Cursor de prohibido */
+    transform: none !important;           /* Sin efecto de movimiento */
+    box-shadow: none !important;          /* Sin sombra */
+    opacity: 0.8;
+}
+
+/* En modo oscuro, el gris debe ser más oscuro para no encandilar */
+body.dark-mode .productos .btn:disabled {
+    background-color: #444444 !important;
+    color: #aaaaaa !important;
+}
 
 /* Título de la sección */
 .productos-title {

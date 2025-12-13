@@ -17,3 +17,4 @@ require_once __DIR__ . '/models/OrderModel.php'; // (Si ya creaste OrderModel)
 // 4. SERVICIOS Y HELPERS
 require_once __DIR__ . '/services/UserValidator.php';
 require_once __DIR__ . '/services/SecurityHelper.php';
+require_once __DIR__ . '/services/ThemeHelper.php';

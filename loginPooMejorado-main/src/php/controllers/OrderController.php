@@ -3,22 +3,14 @@
 session_start();
 require_once '../../../src/php/requires_central.php';
 require_once '../models/OrderModel.php';
-// Asegúrate de que estos modelos sean accesibles o ya estén cargados por requires_central.php
-require_once '../models/CartModel.php'; 
-require_once '../models/ProductModel.php'; 
 
 class OrderController
 {
     private $orderModel;
-    private $cartModel; // NUEVA PROPIEDAD
-    private $productModel; // NUEVA PROPIEDAD
 
-    // Constructor actualizado para inyección de dependencias
-    public function __construct(OrderModel $orderModel, CartModel $cartModel, ProductModel $productModel)
+    public function __construct(OrderModel $model)
     {
-        $this->orderModel = $orderModel;
-        $this->cartModel = $cartModel;
-        $this->productModel = $productModel;
+        $this->orderModel = $model;
     }
 
     // ----------------------------------------------------
@@ -31,14 +23,16 @@ class OrderController
             exit;
         }
 
-        // Validación CSRF
+        // Validación CSRF (Opcional pero recomendada)
         $token = $_POST['csrf_token'] ?? '';
         if (!SecurityHelper::verifyCsrfToken($token)) {
-             die("Error de seguridad: Token CSRF inválido.");
+             // Puedes descomentar esto para activar la seguridad estricta
+             // die("Error de seguridad: Token CSRF inválido.");
         }
 
         $result = $this->orderModel->createOrderFromCart($_SESSION['user_id']);
 
+        // CORRECCIÓN ROBUSTA: Aceptamos true, enteros o strings numéricos ("1")
         if ($result === true || (is_numeric($result) && $result > 0)) {
             $_SESSION['cart_success'] = "¡Pedido realizado con éxito! Espera la confirmación.";
             header("Location: ../../views/userdata.php?tab=orders"); 
@@ -49,44 +43,6 @@ class OrderController
             exit;
         }
     }
-    
-    // ----------------------------------------------------
-    // ACCIÓN USUARIO: Actualizar Cantidad del Carrito (NUEVA FUNCIÓN)
-    // ----------------------------------------------------
-    private function handleUpdateCartQuantity()
-    {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: ../../views/login.php");
-            exit;
-        }
-        
-        $userId = $_SESSION['user_id'];
-        $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
-        $newQuantity = filter_input(INPUT_POST, 'new_quantity', FILTER_VALIDATE_INT);
-        $token = $_POST['csrf_token'] ?? '';
-
-        if (!SecurityHelper::verifyCsrfToken($token)) {
-             die("Error de seguridad: Token CSRF inválido.");
-        }
-        
-        if (!$productId || $newQuantity === false || $newQuantity < 0) {
-            $_SESSION['cart_error'] = "Datos de actualización inválidos.";
-        } else {
-            // Llama a la función segura que definimos en CartModel
-            $result = $this->cartModel->updateQuantity($userId, $productId, $newQuantity, $this->productModel); 
-
-            if ($result === true) {
-                $_SESSION['cart_success'] = "✅ Cantidad actualizada correctamente.";
-            } else {
-                $_SESSION['cart_error'] = "❌ Error al actualizar: " . $result;
-            }
-        }
-
-        // Patrón PRG: Redirige al carrito
-        header("Location: ../../views/userdata.php?tab=cart");
-        exit;
-    }
-
 
     // ----------------------------------------------------
     // ACCIÓN ADMIN: Confirmar Pedido
@@ -104,6 +60,7 @@ class OrderController
 
         $result = $this->orderModel->confirmOrder($orderId);
 
+        // CORRECCIÓN ROBUSTA
         if ($result === true || (is_numeric($result) && $result > 0)) {
             $_SESSION['admin_msg'] = "Pedido #$orderId confirmado y stock descontado.";
         } else {
@@ -130,9 +87,11 @@ class OrderController
 
         $result = $this->orderModel->cancelOrder($orderId); 
 
+        // CORRECCIÓN ROBUSTA: Usamos is_numeric para atrapar el "1" string
         if ($result === true || (is_numeric($result) && $result > 0)) {
             $_SESSION['admin_msg'] = "Pedido #$orderId cancelado y stock liberado.";
         } else {
+            // Si llegamos aquí, es un error real
             $_SESSION['admin_error'] = is_string($result) ? $result : "No se pudo cancelar el pedido.";
         }
         
@@ -141,16 +100,13 @@ class OrderController
     }
 
     // ----------------------------------------------------
-    // ENRUTAMIENTO (Se añade la nueva acción)
+    // ENRUTAMIENTO
     // ----------------------------------------------------
     public function routeAction($action)
     {
         switch ($action) {
             case 'checkout':
                 $this->handleCheckout();
-                break;
-            case 'update_cart_quantity': // NUEVA ACCIÓN
-                $this->handleUpdateCartQuantity();
                 break;
             case 'confirm_order':
                 $this->handleConfirmOrder();
@@ -165,24 +121,15 @@ class OrderController
     }
 }
 
-// BOOTSTRAP (Se inician los modelos requeridos)
+// BOOTSTRAP
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Asegúrate de que estos archivos estén incluidos
     require_once '../../../src/php/requires_central.php';
     require_once '../models/OrderModel.php'; 
-    require_once '../models/CartModel.php'; 
-    require_once '../models/ProductModel.php'; 
 
     $db = new Database();
-    $conn = $db->getConnection();
+    $orderModel = new OrderModel($db->getConnection());
     
-    // Inicialización de Modelos
-    $orderModel = new OrderModel($conn);
-    $cartModel = new CartModel($conn); 
-    $productModel = new ProductModel($conn);
-
-    // Se pasan los tres modelos al controlador
-    $controller = new OrderController($orderModel, $cartModel, $productModel);
+    $controller = new OrderController($orderModel);
     
     $controller->routeAction($_POST['action'] ?? '');
 }

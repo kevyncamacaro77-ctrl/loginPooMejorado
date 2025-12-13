@@ -1,16 +1,19 @@
 /* Styles for the Pasantía reporte */
+
+
+
 .reporte-pasantias {
   padding: 20px;
   border: 1px solid #333;
   margin: 20px auto;
   max-width: 90%;
-  background-color: #2a2a3e;
+
   border-radius: 8px;
   color: #ddd;
   box-sizing: border-box;
 }
 .reporte-pasantias h2 {
-  color: #61dafb;
+  color: white ;
   text-align: center;
   margin: 0 0 10px 0;
   font-size: 1.35rem;
@@ -25,20 +28,20 @@
   margin-bottom: 16px;
 }
 .reporte-pasantias .stats-section h4 {
-  color: #61dafb;
+  color: white ;
   margin: 0 0 8px 0;
 }
 .reporte-pasantias p {
-  color: #bbb;
+  color: white ;
   margin: 6px 0;
 }
 .reporte-pasantias .text-muted {
-  color: #777;
+  color: white ;
 }
 .reporte-pasantias table {
   width: 100%;
   max-width: 600px;
-  color: #ddd;
+  color: white ;
   border-collapse: collapse;
   margin-top: 12px;
 }
@@ -61,11 +64,11 @@
   box-sizing: border-box;
 }
 .reporte-pasantias .ventas-wrapper canvas {
-  width: 100% !important;
-  height: 100% !important;
+  width: 100%;
+  height: 100% ;
 }
 .reporte-pasantias .small-muted {
-  color: #999;
+  color: whitet;
   font-size: 0.85rem;
 }
 /* Responsive adjustments */
@@ -81,4 +84,48 @@
     padding: 8px;
   }
   .reporte-pasantias .ventas-wrapper { height: 300px; }
+}
+
+/* Theme-specific styles */
+body:not(.dark-mode) .reporte-pasantias {
+  background-color: #f8f9fa !important;
+  border: 1px solid #ddd !important;
+  color: #333 !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias h2 {
+  color: #333 !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias .stats-section h4 {
+  color: #333 !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias p {
+  color: #333 !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias .text-muted {
+  color: #777 !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias table {
+  color: #333 !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias table thead {
+  background-color: #e9ecef !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias table th,
+body:not(.dark-mode) .reporte-pasantias table td {
+  border: 1px solid #ddd !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias hr {
+  background-color: #ddd !important;
+}
+
+body:not(.dark-mode) .reporte-pasantias .small-muted {
+  color: #777 !important;
 }

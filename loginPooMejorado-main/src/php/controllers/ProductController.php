@@ -21,59 +21,86 @@ class ProductController
     /**
      * Maneja la adición de un producto al carrito, actualizando el stock comprometido.
      */
-    private function handleAddToCart()
-    {
-        // 1. Guardia de seguridad: Debe estar logueado y no ser administrador
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_rol'] ?? 'cliente') === 'administrador') {
-            $_SESSION['error_login'] = "Acceso denegado. Debes iniciar sesión como cliente.";
-            header("Location: ../../views/login.php");
-            exit;
+   // En src/php/controllers/ProductController.php
+
+/**
+ * Maneja la adición de un producto al carrito, actualizando el stock comprometido.
+ */
+private function handleAddToCart()
+{
+    // 1. Guardia de seguridad: Debe estar logueado y no ser administrador
+    if (!isset($_SESSION['user_id']) || ($_SESSION['user_rol'] ?? 'cliente') === 'administrador') {
+        $_SESSION['error_login'] = "Acceso denegado. Debes iniciar sesión como cliente.";
+        header("Location: ../../views/login.php");
+        exit;
+    }
+
+    $userId = $_SESSION['user_id'];
+    $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
+    $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
+
+    // 2. Validación Básica de Entrada
+    if (!$productId || $productId <= 0 || !$quantity || $quantity <= 0) {
+        $_SESSION['cart_error'] = "Cantidad o producto inválido.";
+        header("Location: ../../views/dashboard.php#productos");
+        exit;
+    }
+
+    // 3. Validación avanzada de Stock (Controlador)
+    // El stock disponible es stock_actual - stock_comprometido
+    $product_data = $this->productModel->getProductById($productId);
+
+    if (is_string($product_data)) {
+        $_SESSION['cart_error'] = "Error de sistema al verificar producto.";
+        header("Location: ../../views/dashboard.php#productos");
+        exit;
+    }
+
+    // Calcular el stock disponible actual
+    $stock_disponible = $product_data['stock_actual'] - $product_data['stock_comprometido'];
+
+
+    // Si el stock disponible es mayor a 1, el límite es stock_disponible - 1
+    // Si el stock disponible es 1 o 0, el límite es stock_disponible, permite pedir 1 si hay 1
+    $max_allowed_purchase = ($stock_disponible > 1) ? $stock_disponible - 1 : $stock_disponible;
+
+    if ($quantity > $max_allowed_purchase) {
+        $error_message = "No se puede reservar todo el stock disponible. Máximo permitido: {$max_allowed_purchase} unidades.";
+        
+        // Mensaje más amigable si el stock es 0 
+        if ($stock_disponible <= 0) {
+            $error_message = "Producto agotado o sin disponibilidad para reservar.";
         }
+        
+        $_SESSION['cart_error'] = $error_message;
+        header("Location: ../../views/dashboard.php#productos");
+        exit;
+    }
+    
+    
+    // 4. Si el stock total (antes de la restricción) es insuficiente.
+    // Aunque la validación anterior ya cubre esto, esta es la validación de 'cantidad > stock real'
+    if (!$product_data || $stock_disponible < $quantity) {
+        // Este caso solo se da si el stock es 0 o si el usuario pide una cantidad negativa/cero, pero lo mantenemos por seguridad.
+        $_SESSION['cart_error'] = "Stock insuficiente para la reserva solicitada.";
+        header("Location: ../../views/dashboard.php#productos");
+        exit;
+    }
 
-        $userId = $_SESSION['user_id'];
-        $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
-        $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
+    // 5. Llamar a la lógica de reserva del Modelo
+    // El método addItem ahora incrementa stock_comprometido en lugar de deducir stock_actual.
+    $result = $this->cartModel->addItem($userId, $productId, $quantity, $this->productModel);
 
-        // 2. Validación Básica de Entrada
-        if (!$productId || $productId <= 0 || !$quantity || $quantity <= 0) {
-            $_SESSION['cart_error'] = "Cantidad o producto inválido.";
-            header("Location: ../../views/dashboard.php#productos");
-            exit;
-        }
-
-        // 3. Validación avanzada de Stock (Controlador)
-        // El stock disponible es stock_actual - stock_comprometido
-        $product_data = $this->productModel->getProductById($productId);
-
-        if (is_string($product_data)) {
-            $_SESSION['cart_error'] = "Error de sistema al verificar producto.";
-            header("Location: ../../views/dashboard.php#productos");
-            exit;
-        }
-
-        // Calcular el stock disponible
-        $stock_disponible = $product_data['stock_actual'] - $product_data['stock_comprometido'];
-
-        if (!$product_data || $stock_disponible < $quantity) {
-            $_SESSION['cart_error'] = "Stock insuficiente para la reserva solicitada.";
-            header("Location: ../../views/dashboard.php#productos");
-            exit;
-        }
-
-        // 4. Llamar a la lógica de reserva del Modelo
-        // El método addItem ahora incrementa stock_comprometido en lugar de deducir stock_actual.
-        $result = $this->cartModel->addItem($userId, $productId, $quantity, $this->productModel);
-
-        if ($result === true) {
-            $_SESSION['cart_success'] = "¡Producto añadido a la reserva! Stock apartado.";
-            header("Location: ../../views/dashboard.php");
-            exit;
-        }
-
-        // 5. Fracaso (Error de Stock o DB devuelto por el Modelo)
-        $_SESSION['cart_error'] = $result;
+    if ($result === true) {
+        $_SESSION['cart_success'] = "¡Producto añadido a la reserva! Stock apartado.";
         header("Location: ../../views/dashboard.php");
         exit;
+    }
+
+     // 6. Fracaso (Error de Stock o DB devuelto por el Modelo)
+     $_SESSION['cart_error'] = $result;
+        header("Location: ../../views/dashboard.php");
+     exit;
     }
 
     private function handleRemoveItem()
@@ -163,14 +190,6 @@ class ProductController
     {
         $this->checkAdminAccess();
 
-        // Verificar CSRF
-        $token = $_POST['csrf_token'] ?? '';
-        if (!SecurityHelper::verifyCsrfToken($token)) {
-            $_SESSION['update_error'] = "Error de seguridad: token CSRF inválido.";
-            header("Location: ../../views/dashboard.php");
-            exit;
-        }
-
         $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
         $newStock = filter_input(INPUT_POST, 'new_stock', FILTER_VALIDATE_INT);
 
@@ -180,18 +199,8 @@ class ProductController
             exit;
         }
 
-        // Registramos estado previo para diagnóstico
-        $before = $this->productModel->getProductById($productId);
-        $logLine = date('Y-m-d H:i:s') . " | UPDATE_STOCK_REQUEST | product_id={$productId} | newStock={$newStock} | before=" . json_encode($before) . PHP_EOL;
-        @file_put_contents(__DIR__ . '/debug_log.txt', $logLine, FILE_APPEND);
-
         // NUEVA REGLA: El administrador actualiza el stock_actual (físico).
         $result = $this->productModel->updateStockDirect($productId, $newStock);
-
-        // Registramos estado posterior para diagnóstico
-        $after = $this->productModel->getProductById($productId);
-        $logLine2 = date('Y-m-d H:i:s') . " | UPDATE_STOCK_RESULT | product_id={$productId} | result=" . json_encode($result) . " | after=" . json_encode($after) . PHP_EOL;
-        @file_put_contents(__DIR__ . '/debug_log.txt', $logLine2, FILE_APPEND);
 
         if ($result === true) {
             $_SESSION['cart_success'] = "Stock actualizado con éxito.";

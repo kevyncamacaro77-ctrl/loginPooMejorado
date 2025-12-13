@@ -13,6 +13,105 @@ class ProductModel extends DbModel
 
     // --- MÉTODOS DE LECTURA (Catálogo) ---
 
+    // En src/php/models/ProductModel.php
+
+/**
+ * Obtiene las estadísticas de ventas (labels, data, media, mediana, moda).
+ * Se basa en pedidos con estado 'completado'.
+ * @return array
+ */
+public function getSalesStatistics(): array
+{
+    // ** 1. CONSULTA SQL **
+    // OBJETIVO: Obtener el valor de 'cantidad' de CADA LÍNEA DE DETALLE de CADA PEDIDO 'completado'.
+    // Esto crea el conjunto de datos necesario para calcular la Media, Mediana y Moda.
+    $sql = "
+        SELECT 
+            dp.cantidad
+        FROM 
+            detalles_pedido dp
+        JOIN 
+            pedidos o ON dp.pedido_id = o.id
+        WHERE
+            o.estado = 'completado'
+    ";
+
+    $result = $this->runSelectStatement($sql, "");
+
+    // Manejo de errores de DB
+    if (is_string($result)) {
+        error_log("Error de DB al obtener estadísticas: " . $result);
+        return ['labels' => [], 'data' => [], 'media' => 0, 'mediana' => 0, 'moda' => 0, 'total_items' => 0];
+    }
+    
+    $salesData = []; // Array simple de TODAS las cantidades vendidas (e.g., [4, 4, 4, 11, 11, 11, 11])
+
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            // Convertimos la cantidad a entero para el cálculo 
+            $salesData[] = (int) $row['cantidad'];
+        }
+    }
+
+    // Si no hay datos (no hay ventas completadas)
+    if (empty($salesData)) {
+        return ['labels' => ['Sin Ventas'], 'data' => [0], 'media' => 0, 'mediana' => 0, 'moda' => 0, 'total_items' => 0];
+    }
+    
+    // ** 2. CARGAR HELPER **
+    // Usamos la ruta relativa correcta desde ProductModel
+    require_once __DIR__ . '/../services/StatisticsHelper.php';
+
+    // ** 3. Cálculo de Estadísticas **
+    $media = StatisticsHelper::calculateMean($salesData);
+    $mediana = StatisticsHelper::calculateMedian($salesData);
+    $moda = StatisticsHelper::calculateMode($salesData);
+
+    // ** 4. Preparación para el gráfico (Gráfico de torta/barras de Unidades Vendidas por Producto)**
+    // Esto requiere otra consulta, la hacemos aquí mismo para obtener la data completa.
+    $sql_chart = "
+        SELECT 
+            p.nombre, 
+            SUM(dp.cantidad) AS total_vendido
+        FROM 
+            detalles_pedido dp
+        JOIN 
+            productos p ON dp.producto_id = p.id
+        JOIN 
+            pedidos o ON dp.pedido_id = o.id
+        WHERE
+            o.estado = 'completado'
+        GROUP BY 
+            p.nombre
+        ORDER BY 
+            total_vendido DESC
+    ";
+    
+    $chartResult = $this->runSelectStatement($sql_chart, "");
+    $chartLabels = [];
+    $chartData = [];
+    
+    if (!is_string($chartResult) && $chartResult->num_rows > 0) {
+        while ($row = $chartResult->fetch_assoc()) {
+            $chartLabels[] = $row['nombre'];
+            $chartData[] = (int) $row['total_vendido'];
+        }
+    }
+    // ** 5. Retorno del resultado **
+    return [
+        // Datos para el gráfico
+        'labels' => $chartLabels,
+        'data' => $chartData,
+        // Datos estadísticos (calculados sobre salesData)
+        'media' => $media,
+        'mediana' => $mediana,
+        'moda' => (is_array($moda) ? implode(', ', $moda) : $moda), // Manejar moda como array o float
+        'total_items' => array_sum($salesData) // Total de unidades vendidas en general
+    ];
+}
+
+
+
     /**
      * Obtiene todos los productos del catálogo, incluyendo el stock disponible (calculado).
      * @return array|string Array de productos o mensaje de error.
@@ -27,7 +126,6 @@ class ProductModel extends DbModel
                 precio, 
                 stock_actual,
                 stock_comprometido,
-                unidades_vendidas,
                 -- CALCULAR EL STOCK DISPONIBLE (lo que el cliente puede reservar)
                 (stock_actual - stock_comprometido) AS stock_disponible, 
                 imagen_url 
@@ -233,26 +331,15 @@ class ProductModel extends DbModel
      * Este método es llamado por el Administrador al confirmar un pedido.
      * @return bool|string True si éxito, o error de DB (string).
      */
-   // En src/php/models/ProductModel.php, alrededor de la línea 184
-    public function confirmSaleDeductStock(int $productId, int $quantity): bool|string
+   public function confirmSaleDeductStock(int $productId, int $quantity): bool|string
     {
-    // 1. Reducir stock_actual
-    // 2. Reducir stock_comprometido
-    // 3. AUMENTAR unidades_vendidas <-- ¡EL CAMBIO CRÍTICO!
-
-    $sql = "UPDATE productos 
+    
+     $sql = "UPDATE productos 
             SET stock_actual = stock_actual - ?, 
-                stock_comprometido = stock_comprometido - ?,
+                stock_comprometido = stock_comprometido - ?, 
                 unidades_vendidas = unidades_vendidas + ? 
-            WHERE id = ? AND stock_actual >= ?";
+            WHERE id = ? AND stock_actual >= ?"; // La condición stock_actual >= ? es una seguridad extra.
 
-             // Tipos: iiiii (cantidad, cantidad, cantidad, id, cantidad)
-             // Se pasan 5 parámetros:
-             // 1. $quantity (para stock_actual -)
-             // 2. $quantity (para stock_comprometido -)
-                // 3. $quantity (para unidades_vendidas +) <-- Nuevo
-                // 4. $productId (para WHERE id)
-             // 5. $quantity (para WHERE stock_actual)
 
     $result = $this->runDmlStatement($sql, "iiiii", $quantity, $quantity, $quantity, $productId, $quantity); 
 
@@ -264,30 +351,6 @@ class ProductModel extends DbModel
         return "Error de DB al confirmar venta: {$result}";
     }
 
-     return "Error: Stock insuficiente o producto no encontrado al confirmar.";
+    return "Error: Stock insuficiente o producto no encontrado al confirmar.";
     }
-
-    public function getSoldQuantities(): array|string
-    {
-    // 1. Consulta: Selecciona la columna 'unidades_vendidas'
-    $sql = "SELECT unidades_vendidas FROM productos WHERE unidades_vendidas > 0";
-
-    $result = $this->runSelectStatement($sql, "");
-
-    if (is_string($result)) {
-        return "Error de DB al leer datos de ventas: " . $result;
-    }
-
-    $salesData = [];
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            // 2. Importante: Convierte el valor a INT antes de añadirlo al array
-            $salesData[] = (int) $row['unidades_vendidas'];
-        }
-    }
-    
-    return $salesData;
-    }
-
-
 }
