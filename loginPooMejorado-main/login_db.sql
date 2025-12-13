@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
--- Servidor: 127.0.0.1
--- Tiempo de generación: 12-12-2025 a las 21:49:57
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Host: localhost:3306
+-- Generation Time: Dec 13, 2025 at 02:56 AM
+-- Server version: 8.0.30
+-- PHP Version: 8.1.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,160 +18,174 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `login_db`
+-- Database: `login_db`
 --
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `carritos_activos`
+-- Table structure for table `carritos_activos`
 --
 
 CREATE TABLE `carritos_activos` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `fecha_creacion` datetime NOT NULL DEFAULT current_timestamp(),
-  `fecha_actualizacion` datetime NOT NULL DEFAULT current_timestamp()
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `fecha_creacion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `carritos_activos`
---
-
-INSERT INTO `carritos_activos` (`id`, `user_id`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(47, 17, '2025-12-12 16:42:59', '2025-12-12 16:42:59');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `detalles_carrito`
+-- Table structure for table `detalles_carrito`
 --
 
 CREATE TABLE `detalles_carrito` (
-  `id` int(11) NOT NULL,
-  `carrito_id` int(11) NOT NULL,
-  `producto_id` int(11) NOT NULL,
-  `cantidad` int(11) NOT NULL
+  `id` int NOT NULL,
+  `carrito_id` int NOT NULL,
+  `producto_id` int NOT NULL,
+  `cantidad` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `detalles_carrito`
+-- Dumping data for table `detalles_carrito`
 --
 
 INSERT INTO `detalles_carrito` (`id`, `carrito_id`, `producto_id`, `cantidad`) VALUES
-(62, 47, 13, 5);
+(9, 4, 13, 4),
+(10, 4, 18, 1),
+(11, 4, 15, 1),
+(12, 5, 13, 1),
+(13, 6, 13, 2),
+(18, 7, 18, 2),
+(19, 7, 15, 2),
+(20, 7, 17, 2),
+(21, 7, 14, 2),
+(22, 8, 18, 2),
+(23, 8, 13, 2),
+(24, 9, 18, 5),
+(25, 9, 15, 1),
+(26, 9, 17, 5),
+(27, 9, 14, 5),
+(28, 10, 13, 2),
+(29, 10, 18, 2),
+(30, 11, 13, 4),
+(31, 11, 18, 4),
+(32, 11, 15, 4),
+(33, 11, 16, 4),
+(34, 11, 17, 4),
+(35, 11, 14, 4);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `detalles_pedido`
+-- Table structure for table `detalles_pedido`
 --
 
 CREATE TABLE `detalles_pedido` (
-  `id` int(11) NOT NULL,
-  `pedido_id` int(11) NOT NULL,
-  `producto_id` int(11) NOT NULL,
-  `cantidad` int(11) NOT NULL,
+  `id` int NOT NULL,
+  `pedido_id` int NOT NULL,
+  `producto_id` int NOT NULL,
+  `cantidad` int NOT NULL,
   `precio_unitario` decimal(10,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `detalles_pedido`
+-- Dumping data for table `detalles_pedido`
 --
 
 INSERT INTO `detalles_pedido` (`id`, `pedido_id`, `producto_id`, `cantidad`, `precio_unitario`) VALUES
-(2, 2, 13, 10, 20.00),
-(3, 3, 13, 6, 20.00),
-(4, 4, 13, 1, 20.00),
-(5, 5, 13, 6, 20.00),
-(6, 6, 13, 5, 20.00),
-(7, 7, 13, 1, 20.00),
-(8, 8, 13, 1, 20.00);
+(54, 38, 13, 6, '20.00'),
+(55, 38, 18, 5, '40.00'),
+(56, 38, 15, 5, '60.00');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `failing_attempts_ip`
+-- Table structure for table `failing_attempts_ip`
 --
 
 CREATE TABLE `failing_attempts_ip` (
-  `ip_address` varchar(45) NOT NULL,
-  `failed_attempts` int(11) NOT NULL DEFAULT 1,
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `failed_attempts` int NOT NULL DEFAULT '1',
   `block_time` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `pedidos`
+-- Table structure for table `pedidos`
 --
 
 CREATE TABLE `pedidos` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `fecha_solicitud` datetime NOT NULL DEFAULT current_timestamp(),
-  `estado` enum('pendiente','completado','cancelado') NOT NULL DEFAULT 'pendiente',
-  `total` decimal(10,2) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `fecha_pedido` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `total` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `estado` enum('pendiente','procesando','enviado','entregado','cancelado','completado') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'pendiente',
+  `fecha_confirmacion` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
--- Volcado de datos para la tabla `pedidos`
+-- Dumping data for table `pedidos`
 --
 
-INSERT INTO `pedidos` (`id`, `user_id`, `fecha_solicitud`, `estado`, `total`) VALUES
-(2, 17, '2025-12-04 23:24:39', 'cancelado', 200.00),
-(3, 17, '2025-12-04 23:35:31', 'cancelado', 120.00),
-(4, 17, '2025-12-04 23:38:57', 'cancelado', 20.00),
-(5, 17, '2025-12-04 23:47:10', 'cancelado', 120.00),
-(6, 17, '2025-12-04 23:50:40', 'cancelado', 100.00),
-(7, 17, '2025-12-05 00:00:07', 'cancelado', 20.00),
-(8, 17, '2025-12-05 00:01:11', 'pendiente', 20.00);
+INSERT INTO `pedidos` (`id`, `user_id`, `fecha_pedido`, `total`, `estado`, `fecha_confirmacion`) VALUES
+(31, 2, '2025-12-06 21:58:18', '40.00', 'completado', NULL),
+(32, 2, '2025-12-06 22:02:13', '290.00', 'completado', NULL),
+(33, 2, '2025-12-06 22:15:24', '120.00', 'completado', NULL),
+(34, 2, '2025-12-08 20:55:36', '485.00', 'completado', NULL),
+(35, 2, '2025-12-12 12:17:41', '120.00', 'completado', NULL),
+(36, 2, '2025-12-12 12:57:34', '700.00', 'completado', '2025-12-12 15:13:23'),
+(37, 2, '2025-12-12 19:35:58', '480.00', 'completado', NULL),
+(38, 2, '2025-12-12 20:24:50', '620.00', 'completado', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `productos`
+-- Table structure for table `productos`
 --
 
 CREATE TABLE `productos` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(255) NOT NULL,
-  `descripcion` text NOT NULL,
+  `id` int NOT NULL,
+  `nombre` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `descripcion` text COLLATE utf8mb4_general_ci NOT NULL,
   `precio` decimal(10,2) NOT NULL,
-  `stock_actual` int(11) NOT NULL DEFAULT 0,
-  `imagen_url` varchar(255) DEFAULT NULL,
-  `stock_comprometido` int(11) NOT NULL DEFAULT 0
+  `stock_actual` int NOT NULL DEFAULT '0',
+  `imagen_url` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `stock_comprometido` int NOT NULL DEFAULT '0',
+  `unidades_vendidas` int NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `productos`
+-- Dumping data for table `productos`
 --
 
-INSERT INTO `productos` (`id`, `nombre`, `descripcion`, `precio`, `stock_actual`, `imagen_url`, `stock_comprometido`) VALUES
-(13, 'Aceite para carro Inca', 'Lubricante sintético de alto rendimiento, ideal para motores modernos.', 20.00, 45, '../images/productos/aceite para carro inca.jpg', 6),
-(14, 'Filtros MHW', 'Filtros de aire de alta eficiencia, protege tu motor del polvo.', 15.00, 20, '../images/productos/filtros-MHW.png', 0),
-(15, 'Base Con Bombin Para Filtros', 'Base de metal con bombín manual para purgar el sistema de combustible.', 60.00, 5, '../images/productos/base con bombin para filtros.jpg', 0),
-(16, 'Filtros Combustible 3196', 'Filtro estándar de combustible, recomendado para diésel y gasolina.', 10.00, 0, '../images/productos/Filtros Combustible 3196.png', 0),
-(17, 'Filtros De Aceite', 'Filtro de aceite de larga duración para mantener limpio el motor.', 30.00, 35, '../images/productos/filtro-de-aceite-30dolares.png', 0),
-(18, 'Amortiguador Delantero Chevrolet Spark', 'Amortiguador de suspensión para eje delantero derecho.', 40.00, 0, '../images/productos/Amortiguador Delantero Chevrolet Spark 96424026 Derecho (rh).webp', 0);
+INSERT INTO `productos` (`id`, `nombre`, `descripcion`, `precio`, `stock_actual`, `imagen_url`, `stock_comprometido`, `unidades_vendidas`) VALUES
+(13, 'Aceite para carro Inca', 'Lubricante sintético de alto rendimiento, ideal para motores modernos.', '20.00', 24, '../images/productos/aceite para carro inca.jpg', 0, 6),
+(14, 'Filtros MHW', 'Filtros de aire de alta eficiencia, protege tu motor del polvo.', '15.00', 17, '../images/productos/filtros-MHW.png', 0, 0),
+(15, 'Base Con Bombin Para Filtros', 'Base de metal con bombín manual para purgar el sistema de combustible.', '60.00', 7, '../images/productos/base con bombin para filtros.jpg', 0, 5),
+(16, 'Filtros Combustible 3196', 'Filtro estándar de combustible, recomendado para diésel y gasolina.', '10.00', 16, '../images/productos/Filtros Combustible 3196.png', 0, 0),
+(17, 'Filtros De Aceite', 'Filtro de aceite de larga duración para mantener limpio el motor.', '30.00', 24, '../images/productos/filtro-de-aceite-30dolares.png', 0, 0),
+(18, 'Amortiguador Delantero Chevrolet Spark', 'Amortiguador de suspensión para eje delantero derecho.', '40.00', 5, '../images/productos/Amortiguador Delantero Chevrolet Spark 96424026 Derecho (rh).webp', 0, 5);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `site_settings`
+-- Table structure for table `site_settings`
 --
 
 CREATE TABLE `site_settings` (
-  `id` int(11) NOT NULL,
-  `primary_color` varchar(7) NOT NULL DEFAULT '#007bff',
-  `secondary_color` varchar(7) NOT NULL DEFAULT '#2c3e50',
-  `text_color` varchar(7) NOT NULL DEFAULT '#333333',
-  `bg_color` varchar(7) NOT NULL DEFAULT '#f8f9fa',
-  `card_color` varchar(7) NOT NULL DEFAULT '#ffffff'
+  `id` int NOT NULL,
+  `primary_color` varchar(7) COLLATE utf8mb4_general_ci NOT NULL,
+  `secondary_color` varchar(7) COLLATE utf8mb4_general_ci NOT NULL,
+  `text_color` varchar(7) COLLATE utf8mb4_general_ci NOT NULL,
+  `bg_color` varchar(7) COLLATE utf8mb4_general_ci NOT NULL,
+  `card_color` varchar(7) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `site_settings`
+-- Dumping data for table `site_settings`
 --
 
 INSERT INTO `site_settings` (`id`, `primary_color`, `secondary_color`, `text_color`, `bg_color`, `card_color`) VALUES
@@ -180,164 +194,124 @@ INSERT INTO `site_settings` (`id`, `primary_color`, `secondary_color`, `text_col
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `usuarios`
+-- Table structure for table `usuarios`
 --
 
 CREATE TABLE `usuarios` (
-  `id` int(11) NOT NULL,
-  `rol` enum('usuario','administrador') NOT NULL DEFAULT 'usuario',
-  `nombre` varchar(30) DEFAULT NULL,
-  `email` varchar(50) DEFAULT NULL,
-  `contrasenna` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` int NOT NULL,
+  `rol` enum('usuario','administrador') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'usuario',
+  `nombre` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `contrasenna` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
--- Volcado de datos para la tabla `usuarios`
+-- Dumping data for table `usuarios`
 --
 
 INSERT INTO `usuarios` (`id`, `rol`, `nombre`, `email`, `contrasenna`) VALUES
-(7, 'usuario', 'pepa', 'elpapopepo@gmail.com', '$2y$10$wmK5/HnVNCGY4hf7.qmwGuHqmDv7bmykxnnghp.H2b3brIvDd9E92'),
-(9, 'administrador', 'pepe', 'jco@gmai.com', '$2y$10$BX7Yldsqth/LjNGf0jkfiONLtB7qrGQX1VBx0u0yu6c7F4UosyDX2'),
-(17, 'usuario', 'Avemaria', 'elpepe@gmail.com', '$2y$10$12f0WVlxlM.iB/w0J4gjqOXtpn1Oq5DHQRam4fXZ/tu5oMW4b7z9a'),
-(19, 'usuario', 'bil', 'bilewater@hotmail.com', '$2y$10$yrrLVBEeKtNZY5FCtRq8/u3hD1vRHk5iQQm5oDxB9qJEQHKtWTJO.'),
-(20, 'usuario', 'Moltenfriend', 'volcanobuddy@gmail.com', '$2y$10$NRanMQCoWDudmrhIjzMBme0dmsIpp1kDH4p.eMiTegku3SbT/4LXy'),
-(21, 'usuario', 'alejandro sans', 'corazonpartio@gmail.com', '$2y$10$S27XEH6nJ9733rb7dSkYIun0eQ5UEE6kmBiF5.1X.sT82jhR25pMi'),
-(22, 'usuario', 'avemariasefue', 'algomas@gmail.com', '$2y$10$bXPBO0.Q8Kvha1I6mRdA3.G/91DnZcMkJFnq.GZToYpPg32JfXbBS'),
-(23, 'usuario', 'jonathaneselsus', 'elpeposus@gmail.com', '$2y$10$DS5R9sSgQGyptNPsvJb3y.YmDDDP/1dFP4w8pN0FyfYpI6dtyQ2Iq'),
-(24, 'usuario', 'etesech', 'pepito@gmail.com', '$2y$10$4NOO9F2jW4J7w9zuropJueF7.9zO0ckQhrN0g6r6LO0bf7BRkDsZe'),
-(25, 'usuario', 'etepepon', 'lario@gmail.com', '$2y$10$Er9Eu1utSg74zGdezCNX/OnuYTSA0yP1KO48O8kui68UB75Ylk.6m'),
-(26, 'usuario', 'sea', 'e@g.com', '$2y$10$b/QEVWQL6iqkU4/0WbI0fu1hcmcY6Ab7WyxlN3r2yzlsQ8fYnKelO'),
-(27, 'usuario', 'pepa', 'pipa@g.com', '$2y$10$yTY4vsxtMuKOAXhdVsKOzu/gcsmgeXS8jGuvxSIbiUARHCYKqrBDO'),
-(28, 'usuario', 'ula', 'queesvivir@gmail.com', '$2y$10$17DwgXGmxfdPjjIUTHWGs.0ZBtktUMdGJaXoE3hWUoNTW/yuKZy3K'),
-(29, 'usuario', 'amor', 'telodigoyo@gmail.com', '$2y$10$dkgLl36zj40gBB2aIxmhCO32jUuZAZBcDi/CRR8OhfYr3hKWZUni.');
+(1, 'administrador', 'Kevyn', 'kevyncamacaro1@gmail.com', '$2y$10$2gIl5yF049412wHHhqgOguZJ.f2TwfAd82ja2XKSOn6LHfozN.UwO'),
+(2, 'usuario', 'pepe', 'pepe@gmail.com', '$2y$10$nHZw/lm3pRiqjGEXilIqUeWo3Po0OGruhmNobTUDr9yjsBV1LRXf.');
 
 --
--- Índices para tablas volcadas
+-- Indexes for dumped tables
 --
 
 --
--- Indices de la tabla `carritos_activos`
+-- Indexes for table `carritos_activos`
 --
 ALTER TABLE `carritos_activos`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_user` (`user_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `detalles_carrito`
+-- Indexes for table `detalles_carrito`
 --
 ALTER TABLE `detalles_carrito`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_item` (`carrito_id`,`producto_id`),
-  ADD KEY `producto_id` (`producto_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `detalles_pedido`
+-- Indexes for table `detalles_pedido`
 --
 ALTER TABLE `detalles_pedido`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `pedido_id` (`pedido_id`),
-  ADD KEY `producto_id` (`producto_id`);
+  ADD KEY `fk_pedido_id` (`pedido_id`),
+  ADD KEY `fk_producto_id` (`producto_id`);
 
 --
--- Indices de la tabla `failing_attempts_ip`
---
-ALTER TABLE `failing_attempts_ip`
-  ADD PRIMARY KEY (`ip_address`);
-
---
--- Indices de la tabla `pedidos`
+-- Indexes for table `pedidos`
 --
 ALTER TABLE `pedidos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`);
 
 --
--- Indices de la tabla `productos`
+-- Indexes for table `productos`
 --
 ALTER TABLE `productos`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `site_settings`
+-- Indexes for table `site_settings`
 --
 ALTER TABLE `site_settings`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `usuarios`
+-- Indexes for table `usuarios`
 --
 ALTER TABLE `usuarios`
   ADD PRIMARY KEY (`id`);
 
 --
--- AUTO_INCREMENT de las tablas volcadas
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT de la tabla `carritos_activos`
+-- AUTO_INCREMENT for table `carritos_activos`
 --
 ALTER TABLE `carritos_activos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
--- AUTO_INCREMENT de la tabla `detalles_carrito`
+-- AUTO_INCREMENT for table `detalles_carrito`
 --
 ALTER TABLE `detalles_carrito`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
--- AUTO_INCREMENT de la tabla `detalles_pedido`
+-- AUTO_INCREMENT for table `detalles_pedido`
 --
 ALTER TABLE `detalles_pedido`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
--- AUTO_INCREMENT de la tabla `pedidos`
+-- AUTO_INCREMENT for table `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
--- AUTO_INCREMENT de la tabla `productos`
---
-ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
-
---
--- AUTO_INCREMENT de la tabla `usuarios`
+-- AUTO_INCREMENT for table `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- Restricciones para tablas volcadas
+-- Constraints for dumped tables
 --
 
 --
--- Filtros para la tabla `carritos_activos`
---
-ALTER TABLE `carritos_activos`
-  ADD CONSTRAINT `carritos_activos_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `detalles_carrito`
---
-ALTER TABLE `detalles_carrito`
-  ADD CONSTRAINT `detalles_carrito_ibfk_1` FOREIGN KEY (`carrito_id`) REFERENCES `carritos_activos` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `detalles_carrito_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `detalles_pedido`
+-- Constraints for table `detalles_pedido`
 --
 ALTER TABLE `detalles_pedido`
-  ADD CONSTRAINT `detalles_pedido_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `detalles_pedido_ibfk_2` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_pedido_id` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`),
+  ADD CONSTRAINT `fk_producto_id` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`);
 
 --
--- Filtros para la tabla `pedidos`
+-- Constraints for table `pedidos`
 --
 ALTER TABLE `pedidos`
-  ADD CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
